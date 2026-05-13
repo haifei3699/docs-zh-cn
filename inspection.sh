@@ -359,6 +359,15 @@ for file in /opt/rnic/scripts/ip_filter.sh /opt/BDS/exe/check_services.sh; do
     fi
 done
 
+# 检查weka文件
+echo ""
+echo "6. Weka文件:"
+if [ -f "/opt/weka/BDS2Weka.jar" ]; then
+    ls -la "/opt/weka/BDS2Weka.jar" | awk '{print "   " $9 ": 大小=" $5 " bytes, 修改时间=" $6 " " $7 " " $8}'
+else
+    echo "   /opt/weka/BDS2Weka.jar: 文件不存在"
+fi
+
 echo ""
 
 echo "[四、系统监控(System Monitor)]"
