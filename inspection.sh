@@ -186,12 +186,16 @@ df -h 2>/dev/null | grep -E '^/dev/' | awk '{print "   " $1 ": " $5 " (" $6 ")"}
 echo ""
 echo "流量情况(Traffic):"
 echo "   收包/转发统计:"
+echo "   网卡      收包(bytes)    转发(bytes)    收包(Mbps)    转发(Mbps)"
+echo "   ---------------------------------------------------------------"
 if [ -f "/proc/net/dev" ]; then
     cat /proc/net/dev | grep -v 'lo' | grep -v 'virbr' | grep -E '^[[:space:]]*[a-z]' | while read -r line; do
         iface=$(echo "$line" | awk '{print $1}' | sed 's/://')
         rx=$(echo "$line" | awk '{print $2}')
         tx=$(echo "$line" | awk '{print $10}')
-        echo "   $iface: 收包=$rx bytes, 转发=$tx bytes"
+        rx_mbps=$(echo "scale=2; $rx * 8 / 1000000" | bc)
+        tx_mbps=$(echo "scale=2; $tx * 8 / 1000000" | bc)
+        printf "   %-8s %-14s %-14s %-14s %s\n" "$iface" "$rx" "$tx" "$rx_mbps" "$tx_mbps"
     done
 else
     echo "   无法获取流量统计"
