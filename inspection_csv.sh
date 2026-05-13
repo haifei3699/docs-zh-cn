@@ -102,15 +102,11 @@ DISK_USAGE=$(df -h 2>/dev/null | grep -E '^/dev/' | awk '{print $1":"$5":"$6}' |
 # 网卡状态
 NIC_STATUS=$(ip link show 2>/dev/null | grep -E '^[0-9]+:' | awk -F': ' '{print $2}' | grep -v 'lo' | grep -v 'virbr' | tr '\n' ',' | sed 's/,$//')
 
-# DPDK流量
-DPDK_RX_PKTS="0"
-DPDK_RX_BYTE="0"
+# DPDK流量 - 只记录速度
 DPDK_SPEED="0"
 DPDK_STATUS="/opt/DPDK_driver/bin/DPDK_status"
 if [ -f "$DPDK_STATUS" ] && [ -x "$DPDK_STATUS" ]; then
     DPDK_OUTPUT=$("$DPDK_STATUS" -p 2>/dev/null | grep -A 5 'Total')
-    DPDK_RX_PKTS=$(echo "$DPDK_OUTPUT" | grep 'Total' | awk '{print $2}')
-    DPDK_RX_BYTE=$(echo "$DPDK_OUTPUT" | grep 'Total' | awk '{print $3}')
     DPDK_SPEED=$(echo "$DPDK_OUTPUT" | grep 'Total' | awk '{print $NF}')
 fi
 
@@ -188,8 +184,6 @@ print_field "网卡状态:" "$NIC_STATUS"
 echo ""
 
 echo "[DPDK流量]"
-print_field "收包数:" "$DPDK_RX_PKTS"
-print_field "收包字节:" "$DPDK_RX_BYTE"
 print_field "速度(Mbps):" "$DPDK_SPEED"
 echo ""
 
