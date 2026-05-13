@@ -68,6 +68,28 @@ if [ -f "$BDS_CONF" ]; then
         PROBLEMS+=("DPDK_driver.json配置文件不存在")
     fi
     echo ""
+    echo "[防火墙配置]"
+    FW_SETTINGS="/opt/FwPolicy-Manager/settings.ini"
+    if [ -f "$FW_SETTINGS" ]; then
+        FW_TYPE=$(grep "^FW_TYPE" "$FW_SETTINGS" | cut -d'=' -f2 | tr -d ' ')
+        echo "防火墙品牌型号: $FW_TYPE"
+        
+        BASE_URL=$(grep "^base_url" "$FW_SETTINGS" | cut -d'=' -f2 | tr -d ' ')
+        echo "对方防火墙IP: $(echo "$BASE_URL" | sed -E 's|https?://([^:/]+).*|\1|')"
+        
+        FW_USER=$(grep "^user" "$FW_SETTINGS" | cut -d'=' -f2 | tr -d ' ')
+        echo "用户名: $FW_USER"
+        
+        FW_PWD=$(grep "^pwd" "$FW_SETTINGS" | cut -d'=' -f2 | tr -d ' ')
+        echo "密码: $FW_PWD"
+        
+        echo "base_url: $BASE_URL"
+    else
+        echo "✗ 防火墙配置文件不存在 ($FW_SETTINGS)"
+        RESULT="异常"
+        PROBLEMS+=("防火墙配置文件不存在")
+    fi
+    echo ""
     echo "[系统信息]"
     echo "系统IP: $(hostname -I | awk '{print $1}')"
     echo "操作系统: $(cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d'"' -f2)"
@@ -85,6 +107,28 @@ else
     echo "✗ BDS配置文件不存在 ($BDS_CONF)"
     RESULT="异常"
     PROBLEMS+=("BDS配置文件不存在")
+    echo ""
+    echo "[防火墙配置]"
+    FW_SETTINGS="/opt/FwPolicy-Manager/settings.ini"
+    if [ -f "$FW_SETTINGS" ]; then
+        FW_TYPE=$(grep "^FW_TYPE" "$FW_SETTINGS" | cut -d'=' -f2 | tr -d ' ')
+        echo "防火墙品牌型号: $FW_TYPE"
+        
+        BASE_URL=$(grep "^base_url" "$FW_SETTINGS" | cut -d'=' -f2 | tr -d ' ')
+        echo "对方防火墙IP: $(echo "$BASE_URL" | sed -E 's|https?://([^:/]+).*|\1|')"
+        
+        FW_USER=$(grep "^user" "$FW_SETTINGS" | cut -d'=' -f2 | tr -d ' ')
+        echo "用户名: $FW_USER"
+        
+        FW_PWD=$(grep "^pwd" "$FW_SETTINGS" | cut -d'=' -f2 | tr -d ' ')
+        echo "密码: $FW_PWD"
+        
+        echo "base_url: $BASE_URL"
+    else
+        echo "✗ 防火墙配置文件不存在 ($FW_SETTINGS)"
+        RESULT="异常"
+        PROBLEMS+=("防火墙配置文件不存在")
+    fi
     echo ""
     echo "主机名: $(hostname)"
     echo "系统IP: $(hostname -I | awk '{print $1}')"
