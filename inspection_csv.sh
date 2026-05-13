@@ -1,9 +1,14 @@
 #!/bin/bash
 
-# 系统巡检脚本 - 完整信息CSV输出
-# 包含所有巡检信息，一行输出
+# 系统巡检脚本 - 竖排键值对格式输出
+# 左边名称，右边值，更易阅读
 
-# 初始化变量
+# 输出函数
+print_field() {
+    printf "%-20s %s\n" "$1" "$2"
+}
+
+# 获取数据
 TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
 HOSTNAME=$(hostname)
 IP=$(hostname -I | awk '{print $1}')
@@ -124,18 +129,74 @@ if [ ${#PROBLEMS[@]} -gt 0 ]; then
 fi
 PROBLEM_LIST=$(IFS=';'; echo "${PROBLEMS[*]}")
 
-# 处理特殊字符
-escape_csv() {
-    local val="$1"
-    if [[ "$val" == *","* || "$val" == *"\""* || "$val" == *$'\n'* ]]; then
-        echo "\"${val//\"/\"\"}\""
-    else
-        echo "$val"
-    fi
-}
+# 输出竖排格式
+echo "=========================================="
+echo "【系统巡检报告】"
+echo "=========================================="
+echo ""
 
-# 输出CSV头
-echo "巡检日期(Time),主机名(Hostname),IP地址(IP),操作系统(OS),系统架构(Arch),启动时间(BootTime),运行时长(Uptime),网关(Gateway),DNS(DNS),本地区域(LocalArea),外部标签模式(ExtTagMode),NFQ_WebAct启用(NFQWebAct),VPN采样天数(VPNDays),转储端口(DumpPort),每端口线程数(ThreadsPerPort),线程总数(ThreadsTotal),突发大小(BurstSize),环形大小(RingSize),数据包大小(PktSize),防火墙品牌(FWType),防火墙IP(FWIP),用户名(FWUser),密码(FWPassword),base_url(FWBaseURL),BDS进程(BDSProcess),FwPolicy状态(FwPolicyStatus),FwPolicy运行时间(FwPolicyUptime),FwPolicy重启次数(FwPolicyRestarts),IP策略数(IPPolicyCount),内存使用率(MemUsage),CPU使用率(CPUUsage),CPU负载(CPULoad),磁盘使用率(DiskUsage),网卡状态(NICStatus),DPDK收包数(DPDKRxPkts),DPDK收包字节(DPDKRxByte),DPDK速度(DPDKSpeed),巡检结果(Result),整改建议(Suggestion),问题列表(Problems)"
+echo "[基本信息]"
+print_field "巡检日期:" "$TIMESTAMP"
+print_field "主机名:" "$HOSTNAME"
+print_field "IP地址:" "$IP"
+print_field "操作系统:" "$OS"
+print_field "系统架构:" "$ARCH"
+print_field "启动时间:" "$BOOT_TIME"
+print_field "运行时长:" "$UPTIME"
+print_field "网关:" "$GATEWAY"
+print_field "DNS服务器:" "$DNS"
+echo ""
 
-# 输出CSV数据
-echo "$(escape_csv "$TIMESTAMP"),$(escape_csv "$HOSTNAME"),$(escape_csv "$IP"),$(escape_csv "$OS"),$(escape_csv "$ARCH"),$(escape_csv "$BOOT_TIME"),$(escape_csv "$UPTIME"),$(escape_csv "$GATEWAY"),$(escape_csv "$DNS"),$(escape_csv "$LOCAL_AREA"),$(escape_csv "$EXT_TAG_MODE"),$(escape_csv "$NFQ_WEBACT"),$(escape_csv "$VPN_DAYS"),$(escape_csv "$DUMP_PORT"),$(escape_csv "$READ_THREADS_PER_PORT"),$(escape_csv "$READ_THREADS_SUM"),$(escape_csv "$BURST_SIZE"),$(escape_csv "$RING_SIZE"),$(escape_csv "$PKT_SIZE"),$(escape_csv "$FW_TYPE"),$(escape_csv "$FW_IP"),$(escape_csv "$FW_USER"),$(escape_csv "$FW_PWD"),$(escape_csv "$FW_BASE_URL"),$(escape_csv "$BDS_PROCESS"),$(escape_csv "$FW_POLICY_STATUS"),$(escape_csv "$FW_POLICY_UPTIME"),$(escape_csv "$FW_POLICY_RESTARTS"),$(escape_csv "$IP_POLICY_COUNT"),$(escape_csv "$MEM_USAGE"),$(escape_csv "$CPU_USAGE"),$(escape_csv "$CPU_LOAD"),$(escape_csv "$DISK_USAGE"),$(escape_csv "$NIC_STATUS"),$(escape_csv "$DPDK_RX_PKTS"),$(escape_csv "$DPDK_RX_BYTE"),$(escape_csv "$DPDK_SPEED"),$(escape_csv "$RESULT"),$(escape_csv "$SUGGESTION"),$(escape_csv "$PROBLEM_LIST")"
+echo "[BDS.json配置]"
+print_field "本地区域:" "$LOCAL_AREA"
+print_field "外部标签模式:" "$EXT_TAG_MODE"
+print_field "NFQ_WebAct启用:" "$NFQ_WEBACT"
+print_field "VPN采样天数:" "$VPN_DAYS"
+echo ""
+
+echo "[DPDK配置]"
+print_field "转储端口:" "$DUMP_PORT"
+print_field "每端口线程数:" "$READ_THREADS_PER_PORT"
+print_field "线程总数:" "$READ_THREADS_SUM"
+print_field "突发大小:" "$BURST_SIZE"
+print_field "环形大小:" "$RING_SIZE"
+print_field "数据包大小:" "$PKT_SIZE"
+echo ""
+
+echo "[防火墙配置]"
+print_field "防火墙品牌:" "$FW_TYPE"
+print_field "防火墙IP:" "$FW_IP"
+print_field "用户名:" "$FW_USER"
+print_field "密码:" "$FW_PWD"
+print_field "base_url:" "$FW_BASE_URL"
+echo ""
+
+echo "[服务状态]"
+print_field "BDS进程:" "$BDS_PROCESS"
+print_field "FwPolicy状态:" "$FW_POLICY_STATUS"
+print_field "FwPolicy运行时间:" "$FW_POLICY_UPTIME"
+print_field "FwPolicy重启次数:" "$FW_POLICY_RESTARTS"
+print_field "IP策略数:" "$IP_POLICY_COUNT"
+echo ""
+
+echo "[系统资源]"
+print_field "内存使用率:" "$MEM_USAGE"
+print_field "CPU使用率:" "$CPU_USAGE"
+print_field "CPU负载:" "$CPU_LOAD"
+print_field "磁盘使用率:" "$DISK_USAGE"
+print_field "网卡状态:" "$NIC_STATUS"
+echo ""
+
+echo "[DPDK流量]"
+print_field "收包数:" "$DPDK_RX_PKTS"
+print_field "收包字节:" "$DPDK_RX_BYTE"
+print_field "速度(Mbps):" "$DPDK_SPEED"
+echo ""
+
+echo "=========================================="
+print_field "【巡检结果】:" "$RESULT"
+print_field "【整改建议】:" "$SUGGESTION"
+if [ -n "$PROBLEM_LIST" ]; then
+    print_field "【问题列表】:" "$PROBLEM_LIST"
+fi
+echo "=========================================="
