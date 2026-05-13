@@ -95,6 +95,19 @@ echo "2. 脚本检查 - 系统服务/进程状态"
 SCRIPT_PATH="/opt/BDS/exe/check_services.sh"
 if [ -f "$SCRIPT_PATH" ]; then
     echo "   ✓ check_services.sh 脚本存在 ($SCRIPT_PATH)"
+    echo ""
+    echo "   执行脚本检查结果:"
+    bash "$SCRIPT_PATH" 2>&1 | while read -r line; do
+        echo "      $line"
+    done
+    
+    SCRIPT_EXIT_CODE=$?
+    if [ $SCRIPT_EXIT_CODE -ne 0 ]; then
+        echo ""
+        echo "   ✗ 脚本执行返回异常状态码: $SCRIPT_EXIT_CODE"
+        RESULT="异常"
+        PROBLEMS+=("check_services.sh脚本执行异常")
+    fi
 else
     echo "   ✗ check_services.sh 脚本不存在 ($SCRIPT_PATH)"
     RESULT="异常"
