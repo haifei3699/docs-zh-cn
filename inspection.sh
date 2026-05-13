@@ -368,6 +368,16 @@ else
     echo "   /opt/weka/BDS2Weka.jar: 文件不存在"
 fi
 
+# 检查模型文件
+echo ""
+echo "7. 模型文件 (/opt/weka/modules_list_mod/model/):"
+MODEL_DIR="/opt/weka/modules_list_mod/model/"
+if [ -d "$MODEL_DIR" ]; then
+    ls -la "$MODEL_DIR" | grep -v '^d' | awk '{print "   " $9 ": 大小=" $5 " bytes, 修改时间=" $6 " " $7 " " $8}'
+else
+    echo "   ✗ 目录不存在: $MODEL_DIR"
+fi
+
 echo ""
 
 echo "[四、系统监控(System Monitor)]"
