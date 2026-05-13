@@ -11,7 +11,16 @@ PROBLEMS=()
 echo "[一、基本信息]"
 echo "巡检日期: $(date '+%Y-%m-%d %H:%M:%S')"
 echo "主机名: $(hostname)"
-echo "IP地址: $(hostname -I | awk '{print $1}')"
+echo ""
+echo "[网络信息]"
+echo "网卡信息:"
+ip addr show 2>/dev/null | grep -E 'inet|inet6|link/ether' | grep -v ' lo ' | grep -v ' virbr' | head -20 | while read -r line; do
+    echo "   $line"
+done
+echo ""
+echo "网关信息: $(ip route show 2>/dev/null | grep default | awk '{print $3}')"
+echo "DNS服务器: $(cat /etc/resolv.conf 2>/dev/null | grep nameserver | awk '{print $2}' | tr '\n' ',' | sed 's/,$//')"
+echo ""
 echo "操作系统: $(cat /etc/os-release | grep PRETTY_NAME | cut -d'"' -f2)"
 echo "内核版本: $(uname -r)"
 echo ""
