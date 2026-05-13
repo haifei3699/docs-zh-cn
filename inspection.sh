@@ -213,6 +213,32 @@ else
 fi
 echo ""
 
+echo "4. 阻断程序状态"
+if systemctl is-active --quiet FwPolicy.service; then
+    echo "   ✓ FwPolicy.service 正在运行"
+    
+    # 获取运行时间
+    echo "   阻断程序运行时间:"
+    systemctl show FwPolicy.service --property=ActiveEnterTimestamp --value
+    
+    # 获取重启次数
+    echo "   重启次数: $(journalctl -u FwPolicy.service --since "1 week ago" | grep -c "Started FwPolicy")"
+    
+    # 检查最近错误
+    echo "   最近状态:"
+    systemctl status FwPolicy.service --no-pager -l | head -10 | sed 's/^/      /'
+else
+    echo "   ✗ FwPolicy.service 未运行"
+    RESULT="异常"
+    PROBLEMS+=("FwPolicy.service未运行")
+    
+    if systemctl status FwPolicy.service --no-pager 2>/dev/null | head -20; then
+        echo "   状态信息:"
+        systemctl status FwPolicy.service --no-pager -l 2>/dev/null | sed 's/^/      /'
+    fi
+fi
+echo ""
+
 echo "[三、系统监控(System Monitor)]"
 echo "----------------------------------------"
 echo "内存使用率(Mem%): $(free | grep Mem | awk '{printf "%.1f%%", $3/$2*100}')"
