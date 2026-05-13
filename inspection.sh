@@ -225,23 +225,38 @@ echo "   【实时流量(每秒)】"
 echo "   网卡      收包(MB)      转发(MB)      收包(Mbps)    转发(Mbps)    收包(Gbps)    转发(Gbps)"
 echo "   --------------------------------------------------------------------------------------------"
 if [ -f "/proc/net/dev" ]; then
-    RX1=$(cat /proc/net/dev | grep -v 'lo:' | grep -v 'face' | awk '{sum+=$2} END {print sum}')
-    TX1=$(cat /proc/net/dev | grep -v 'lo:' | grep -v 'face' | awk '{sum+=$10} END {print sum}')
+    declare -A RX_MAP1 TX_MAP1
+    
+    cat /proc/net/dev | grep -E '^[[:space:]]*[a-z0-9]+:' | grep -v 'lo:' | while read -r line; do
+        iface=$(echo "$line" | awk '{print $1}' | sed 's/://')
+        rx=$(echo "$line" | awk '{print $2}')
+        tx=$(echo "$line" | awk '{print $10}')
+        RX_MAP1["$iface"]=$rx
+        TX_MAP1["$iface"]=$tx
+    done
+    
     sleep 1
-    RX2=$(cat /proc/net/dev | grep -v 'lo:' | grep -v 'face' | awk '{sum+=$2} END {print sum}')
-    TX2=$(cat /proc/net/dev | grep -v 'lo:' | grep -v 'face' | awk '{sum+=$10} END {print sum}')
     
-    RX_DIFF=$((RX2 - RX1))
-    TX_DIFF=$((TX2 - TX1))
-    
-    RX_MB=$(awk "BEGIN {printf \"%.2f\", $RX_DIFF / 1024 / 1024}")
-    TX_MB=$(awk "BEGIN {printf \"%.2f\", $TX_DIFF / 1024 / 1024}")
-    RX_MBPS=$(awk "BEGIN {printf \"%.2f\", $RX_DIFF * 8 / 1000000}")
-    TX_MBPS=$(awk "BEGIN {printf \"%.2f\", $TX_DIFF * 8 / 1000000}")
-    RX_GBPS=$(awk "BEGIN {printf \"%.4f\", $RX_DIFF * 8 / 1000000000}")
-    TX_GBPS=$(awk "BEGIN {printf \"%.4f\", $TX_DIFF * 8 / 1000000000}")
-    
-    printf "   %-8s %-14s %-14s %-14s %-14s %-14s %s\n" "Total" "$RX_MB" "$TX_MB" "$RX_MBPS" "$TX_MBPS" "$RX_GBPS" "$TX_GBPS"
+    cat /proc/net/dev | grep -E '^[[:space:]]*[a-z0-9]+:' | grep -v 'lo:' | while read -r line; do
+        iface=$(echo "$line" | awk '{print $1}' | sed 's/://')
+        rx2=$(echo "$line" | awk '{print $2}')
+        tx2=$(echo "$line" | awk '{print $10}')
+        
+        rx1=${RX_MAP1["$iface"]}
+        tx1=${TX_MAP1["$iface"]}
+        
+        rx_diff=$((rx2 - rx1))
+        tx_diff=$((tx2 - tx1))
+        
+        rx_mb=$(awk "BEGIN {printf \"%.2f\", $rx_diff / 1024 / 1024}")
+        tx_mb=$(awk "BEGIN {printf \"%.2f\", $tx_diff / 1024 / 1024}")
+        rx_mbps=$(awk "BEGIN {printf \"%.2f\", $rx_diff * 8 / 1000000}")
+        tx_mbps=$(awk "BEGIN {printf \"%.2f\", $tx_diff * 8 / 1000000}")
+        rx_gbps=$(awk "BEGIN {printf \"%.4f\", $rx_diff * 8 / 1000000000}")
+        tx_gbps=$(awk "BEGIN {printf \"%.4f\", $tx_diff * 8 / 1000000000}")
+        
+        printf "   %-8s %-14s %-14s %-14s %-14s %-14s %s\n" "$iface" "$rx_mb" "$tx_mb" "$rx_mbps" "$tx_mbps" "$rx_gbps" "$tx_gbps"
+    done
 else
     echo "   无法获取流量统计"
 fi
