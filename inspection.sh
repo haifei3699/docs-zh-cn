@@ -212,16 +212,16 @@ if [ -f "$DPDK_STATUS" ] && [ -x "$DPDK_STATUS" ]; then
     echo "   执行DPDK状态检查:"
     "$DPDK_STATUS" -p 2>/dev/null | while IFS= read -r line; do
         if echo "$line" | grep -q "PORT"; then
-            echo "   $line | rx_gbps(G) |"
+            echo "   $line | rx_gbps(收包G) | tx_gbps(转发G) |"
         elif echo "$line" | grep -q "rx_byte"; then
             echo "   $line"
         elif echo "$line" | grep -q "^|"; then
             rx_byte=$(echo "$line" | awk -F'|' '{print $4}' | tr -d ' ')
             if [ -n "$rx_byte" ] && [ "$rx_byte" != "rx_byte" ] && [ "$rx_byte" -eq "$rx_byte" ] 2>/dev/null; then
                 rx_gbps=$(awk "BEGIN {printf \"%.2f\", $rx_byte * 8 / 1000000000}")
-                echo "   $line | $rx_gbps |"
+                echo "   $line | $rx_gbps |            |"
             else
-                echo "   $line |            |"
+                echo "   $line |            |            |"
             fi
         else
             echo "   $line"
