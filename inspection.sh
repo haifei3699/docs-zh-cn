@@ -39,6 +39,7 @@ if [ -f "$BDS_CONF" ]; then
     echo "版本类型: $(get_json_value "$BDS_CONF" "version_type")"
     echo "到期日期: $(get_json_value "$BDS_CONF" "expire_date")"
     echo ""
+    echo "[BDS.json配置]"
     echo "本地区域(Local Area): $(get_json_value "$BDS_CONF" "local_area")"
     echo "外部标签模式(ExtTagMode): $(get_json_value_num "$BDS_CONF" "extern_tag_mode")"
     echo "NFQ_WebAct启用(NFQ_WebAct): $(get_json_value_num "$BDS_CONF" "NFQ_WebAct_enabled")"
