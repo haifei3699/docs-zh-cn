@@ -39,10 +39,10 @@ if [ -f "$BDS_CONF" ]; then
     echo "版本类型: $(get_json_value "$BDS_CONF" "version_type")"
     echo "到期日期: $(get_json_value "$BDS_CONF" "expire_date")"
     echo ""
-    echo "本地区域: $(get_json_value "$BDS_CONF" "local_area")"
-    echo "外部标签模式: $(get_json_value_num "$BDS_CONF" "extern_tag_mode")"
-    echo "NFQ_WebAct启用: $(get_json_value_num "$BDS_CONF" "NFQ_WebAct_enabled")"
-    echo "VPN采样保存天数: $(get_json_value_num "$BDS_CONF" "vpn_sampled_savedays")"
+    echo "本地区域(Local Area): $(get_json_value "$BDS_CONF" "local_area")"
+    echo "外部标签模式(ExtTagMode): $(get_json_value_num "$BDS_CONF" "extern_tag_mode")"
+    echo "NFQ_WebAct启用(NFQ_WebAct): $(get_json_value_num "$BDS_CONF" "NFQ_WebAct_enabled")"
+    echo "VPN采样保存天数(VPN Days): $(get_json_value_num "$BDS_CONF" "vpn_sampled_savedays")"
     echo ""
     echo "[系统信息]"
     echo "系统IP: $(hostname -I | awk '{print $1}')"
@@ -143,15 +143,46 @@ else
 fi
 echo ""
 
-echo "[三、磁盘空间检查]"
+echo "[三、系统监控(System Monitor)]"
+echo "----------------------------------------"
+echo "内存使用率(Mem%): $(free | grep Mem | awk '{printf "%.1f%%", $3/$2*100}')"
+echo "CPU使用率(CPU%): $(top -bn1 | grep 'Cpu(s)' | sed 's/.*, *\([0-9.]*\)%* id.*/\1/' | awk '{printf "%.1f%%", 100 - $1}')"
+echo ""
+echo "网卡运行情况(NIC Status):"
+ip link show 2>/dev/null | grep -E '^[0-9]+:' | while read -r line; do
+    iface=$(echo "$line" | awk -F': ' '{print $2}')
+    status=$(echo "$line" | grep -q 'UP' && echo "UP" || echo "DOWN")
+    if [ "$iface" != "lo" ] && [[ ! "$iface" =~ virbr ]]; then
+        echo "   $iface: $status"
+    fi
+done
+echo ""
+echo "磁盘使用率(Disk%):"
+df -h 2>/dev/null | grep -E '^/dev/' | awk '{print "   " $1 ": " $5 " (" $6 ")"}'
+echo ""
+echo "流量情况(Traffic):"
+echo "   收包/转发统计:"
+if [ -f "/proc/net/dev" ]; then
+    cat /proc/net/dev | grep -v 'lo' | grep -v 'virbr' | grep -E '^[[:space:]]*[a-z]' | while read -r line; do
+        iface=$(echo "$line" | awk '{print $1}' | sed 's/://')
+        rx=$(echo "$line" | awk '{print $2}')
+        tx=$(echo "$line" | awk '{print $10}')
+        echo "   $iface: 收包=$rx bytes, 转发=$tx bytes"
+    done
+else
+    echo "   无法获取流量统计"
+fi
+echo ""
+
+echo "[四、磁盘空间检查(Disk Space)]"
 df -h | grep -E '^/dev/'
 echo ""
 
-echo "[四、内存使用检查]"
+echo "[五、内存使用检查(Memory)]"
 free -h
 echo ""
 
-echo "[五、CPU负载检查]"
+echo "[六、CPU负载检查(CPU Load)]"
 echo "CPU负载: $(uptime | awk -F'load average:' '{print $2}')"
 echo ""
 
