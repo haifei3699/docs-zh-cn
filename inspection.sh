@@ -14,8 +14,18 @@ echo "主机名: $(hostname)"
 echo ""
 echo "[网络信息]"
 echo "网卡信息:"
-ip addr show 2>/dev/null | grep -E 'inet|inet6|link/ether' | grep -v ' lo ' | grep -v ' virbr' | head -20 | while read -r line; do
-    echo "   $line"
+ip addr show 2>/dev/null | grep -E '^[0-9]+:' | while read -r iface_line; do
+    iface=$(echo "$iface_line" | awk -F': ' '{print $2}')
+    if [ "$iface" != "lo" ] && [[ ! "$iface" =~ virbr ]]; then
+        ipv4=$(ip addr show "$iface" 2>/dev/null | grep -m1 'inet ' | awk '{print $2}')
+        mac=$(ip addr show "$iface" 2>/dev/null | grep -m1 'link/ether' | awk '{print $2}')
+        if [ -n "$ipv4" ]; then
+            echo "   网卡: $iface"
+            echo "   IPv4: $ipv4"
+            [ -n "$mac" ] && echo "   MAC: $mac"
+            echo ""
+        fi
+    fi
 done
 echo ""
 echo "网关信息: $(ip route show 2>/dev/null | grep default | awk '{print $3}')"
