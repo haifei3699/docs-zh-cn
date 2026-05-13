@@ -328,18 +328,9 @@ for file in bdsweb_auth.jar bdsweb_eureka.jar bdsweb_log.jar bdsweb_shell.jar bd
     fi
 done
 
-# 检查check_es.sh
-echo ""
-echo "3. /opt/bdsweb/check_es.sh"
-if [ -f "/opt/bdsweb/check_es.sh" ]; then
-    ls -la "/opt/bdsweb/check_es.sh" | awk '{print "   大小: " $5 " bytes, 修改时间: " $6 " " $7 " " $8}'
-else
-    echo "   ✗ 文件不存在"
-fi
-
 # 检查dist目录
 echo ""
-echo "4. /opt/bdsweb/dist/"
+echo "3. /opt/bdsweb/dist/"
 if [ -d "/opt/bdsweb/dist" ]; then
     ls -la "/opt/bdsweb/dist/" | head -10 | awk '{print "   " $9 ": 大小=" $5 " bytes, 修改时间=" $6 " " $7 " " $8}'
 else
