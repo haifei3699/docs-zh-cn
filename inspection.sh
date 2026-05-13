@@ -378,6 +378,15 @@ else
     echo "   ✗ 目录不存在: $MODEL_DIR"
 fi
 
+# 检查es配置文件
+echo ""
+echo "8. ES配置文件:"
+if [ -f "/opt/es/conf/web_info.ini" ]; then
+    ls -la "/opt/es/conf/web_info.ini" | awk '{print "   " $9 ": 大小=" $5 " bytes, 修改时间=" $6 " " $7 " " $8}'
+else
+    echo "   /opt/es/conf/web_info.ini: 文件不存在"
+fi
+
 echo ""
 
 echo "[四、系统监控(System Monitor)]"
