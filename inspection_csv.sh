@@ -69,9 +69,55 @@ if [ -f "$FW_SETTINGS" ]; then
     fi
 fi
 
-# 进程检查
-BDS_PROCESS="否"
-ps aux | grep -E '[b]ds|BDS' > /dev/null 2>&1 && BDS_PROCESS="是"
+# 服务进程检查
+# DPDK
+DPDK_COUNT=$(ps aux | grep -i 'DPDK_driver' | grep -v grep | wc -l)
+DPDK_STATUS=$( [ "$DPDK_COUNT" -ge 1 ] && echo "正常($DPDK_COUNT)" || echo "异常(0)" )
+
+# RunServiceShell
+RUN_COUNT=$(ps aux | grep 'RunServiceShell' | grep -v grep | wc -l)
+RUN_STATUS=$( [ "$RUN_COUNT" -ge 1 ] && echo "正常($RUN_COUNT)" || echo "异常(0)" )
+
+# nginx
+NGINX_COUNT=$(ps aux | grep 'nginx' | grep -v grep | wc -l)
+NGINX_STATUS=$( [ "$NGINX_COUNT" -ge 1 ] && echo "正常($NGINX_COUNT)" || echo "异常(0)" )
+
+# clickhouse
+CLICKHOUSE_COUNT=$(ps aux | grep 'clickhouse-server' | grep -v grep | wc -l)
+CLICKHOUSE_STATUS=$( [ "$CLICKHOUSE_COUNT" -ge 1 ] && echo "正常($CLICKHOUSE_COUNT)" || echo "异常(0)" )
+
+# elasticsearch
+ES_COUNT=$(ps aux | grep 'elasticsearch' | grep -v grep | wc -l)
+ES_STATUS=$( [ "$ES_COUNT" -ge 1 ] && echo "正常($ES_COUNT)" || echo "异常(0)" )
+
+# redis
+REDIS_COUNT=$(ps aux | grep 'redis-server' | grep -v grep | wc -l)
+REDIS_STATUS=$( [ "$REDIS_COUNT" -ge 1 ] && echo "正常($REDIS_COUNT)" || echo "异常(0)" )
+
+# bdsweb
+BDSWEB_COUNT=$(ps aux | grep 'bdsweb' | grep -v grep | wc -l)
+BDSWEB_STATUS=$( [ "$BDSWEB_COUNT" -ge 5 ] && echo "正常($BDSWEB_COUNT)" || echo "异常($BDSWEB_COUNT)" )
+
+# BDS2Weka
+WEKA_COUNT=$(ps aux | grep 'BDS2Weka' | grep -v grep | wc -l)
+WEKA_STATUS=$( [ "$WEKA_COUNT" -ge 2 ] && echo "正常($WEKA_COUNT)" || echo "异常($WEKA_COUNT)" )
+
+# BDS进程检查 - 需要多个进程
+BDS_ACT_COUNT=$(ps aux | grep 'BDS_ACT' | grep -v grep | wc -l)
+BDS_HOST_COUNT=$(ps aux | grep 'BDS_HOST' | grep -v grep | wc -l)
+BDS_SRV_COUNT=$(ps aux | grep 'BDS_SRV' | grep -v grep | wc -l)
+BDS_DATA_COUNT=$(ps aux | grep 'BDS_DATA' | grep -v grep | wc -l)
+BDS_PCAP_COUNT=$(ps aux | grep 'BDS_PCAP' | grep -v grep | wc -l)
+BDS_MAIN_COUNT=$(ps aux | grep './BDS' | grep -v grep | wc -l)
+BDS_TOTAL_COUNT=$((BDS_ACT_COUNT + BDS_HOST_COUNT + BDS_SRV_COUNT + BDS_DATA_COUNT + BDS_PCAP_COUNT + BDS_MAIN_COUNT))
+
+# 检查BDS进程是否完整
+BDS_STATUS="异常"
+if [ "$BDS_ACT_COUNT" -ge 1 ] && [ "$BDS_HOST_COUNT" -ge 1 ] && [ "$BDS_SRV_COUNT" -ge 1 ] && [ "$BDS_DATA_COUNT" -ge 10 ] && [ "$BDS_PCAP_COUNT" -ge 1 ] && [ "$BDS_MAIN_COUNT" -ge 1 ]; then
+    BDS_STATUS="正常($BDS_TOTAL_COUNT)"
+else
+    BDS_STATUS="异常(ACT:$BDS_ACT_COUNT,HOST:$BDS_HOST_COUNT,SRV:$BDS_SRV_COUNT,DATA:$BDS_DATA_COUNT,PCAP:$BDS_PCAP_COUNT,MAIN:$BDS_MAIN_COUNT)"
+fi
 
 # FwPolicy服务状态
 FW_POLICY_STATUS="未运行"
@@ -114,7 +160,17 @@ fi
 PROBLEMS=()
 [ -z "$FW_IP" ] && PROBLEMS+=("防火墙IP未配置")
 [ -z "$FW_USER" ] && PROBLEMS+=("防火墙用户名未配置")
-[ "$BDS_PROCESS" = "否" ] && PROBLEMS+=("BDS进程未运行")
+
+# 检查各服务状态
+[[ "$DPDK_STATUS" == 异常* ]] && PROBLEMS+=("DPDK异常")
+[[ "$RUN_STATUS" == 异常* ]] && PROBLEMS+=("RunServiceShell异常")
+[[ "$NGINX_STATUS" == 异常* ]] && PROBLEMS+=("nginx异常")
+[[ "$CLICKHOUSE_STATUS" == 异常* ]] && PROBLEMS+=("clickhouse异常")
+[[ "$ES_STATUS" == 异常* ]] && PROBLEMS+=("elasticsearch异常")
+[[ "$REDIS_STATUS" == 异常* ]] && PROBLEMS+=("redis异常")
+[[ "$BDSWEB_STATUS" == 异常* ]] && PROBLEMS+=("bdsweb异常")
+[[ "$WEKA_STATUS" == 异常* ]] && PROBLEMS+=("BDS2Weka异常")
+[[ "$BDS_STATUS" == 异常* ]] && PROBLEMS+=("BDS进程异常")
 [ "$FW_POLICY_STATUS" != "运行中" ] && PROBLEMS+=("FwPolicy服务未运行")
 
 RESULT="正常"
@@ -168,7 +224,15 @@ print_field "base_url:" "$FW_BASE_URL"
 echo ""
 
 echo "[服务状态]"
-print_field "BDS进程:" "$BDS_PROCESS"
+print_field "DPDK:" "$DPDK_STATUS"
+print_field "RunServiceShell:" "$RUN_STATUS"
+print_field "nginx:" "$NGINX_STATUS"
+print_field "clickhouse:" "$CLICKHOUSE_STATUS"
+print_field "elasticsearch:" "$ES_STATUS"
+print_field "redis:" "$REDIS_STATUS"
+print_field "bdsweb:" "$BDSWEB_STATUS"
+print_field "BDS2Weka:" "$WEKA_STATUS"
+print_field "BDS进程:" "$BDS_STATUS"
 print_field "FwPolicy状态:" "$FW_POLICY_STATUS"
 print_field "FwPolicy运行时间:" "$FW_POLICY_UPTIME"
 print_field "FwPolicy重启次数:" "$FW_POLICY_RESTARTS"
