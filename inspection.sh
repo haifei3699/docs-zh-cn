@@ -209,24 +209,30 @@ echo ""
 echo "[DPDK流量]"
 DPDK_STATUS="/opt/DPDK_driver/bin/DPDK_status"
 if [ -f "$DPDK_STATUS" ] && [ -x "$DPDK_STATUS" ]; then
-    echo "   执行DPDK状态检查:"
-    "$DPDK_STATUS" -p 2>/dev/null | while IFS= read -r line; do
-        if echo "$line" | grep -q "PORT"; then
-            echo "   $line | rx_gbps(收包G) | tx_gbps(转发G) |"
-        elif echo "$line" | grep -q "rx_byte"; then
-            echo "   $line"
-        elif echo "$line" | grep -q "^|"; then
-            rx_byte=$(echo "$line" | awk -F'|' '{print $4}' | tr -d ' ')
-            if [ -n "$rx_byte" ] && [ "$rx_byte" != "rx_byte" ] && [ "$rx_byte" -eq "$rx_byte" ] 2>/dev/null; then
-                rx_gbps=$(awk "BEGIN {printf \"%.2f\", $rx_byte * 8 / 1000000000}")
-                echo "   $line | $rx_gbps |            |"
-            else
-                echo "   $line |            |            |"
-            fi
+    echo "   +--------------------------------------------------------------------------------------------------+"
+    echo "   | 端口 | 收包数(Pkts)     | 收包字节(Bytes)    | 收包Gbps | 丢包数 | 丢包字节 | 错误包数 | 速度(M) |"
+    echo "   +------+------------------+-------------------+----------+--------+----------+----------+---------+"
+    
+    "$DPDK_STATUS" -p 2>/dev/null | grep -E '^\|[0-9]+' | while IFS= read -r line; do
+        port=$(echo "$line" | awk -F'|' '{print $2}' | tr -d ' ')
+        rx_pkts=$(echo "$line" | awk -F'|' '{print $3}' | tr -d ' ')
+        rx_byte=$(echo "$line" | awk -F'|' '{print $4}' | tr -d ' ')
+        rx_drop=$(echo "$line" | awk -F'|' '{print $5}' | tr -d ' ')
+        rx_drop_byte=$(echo "$line" | awk -F'|' '{print $6}' | tr -d ' ')
+        rx_err=$(echo "$line" | awk -F'|' '{print $7}' | tr -d ' ')
+        speed=$(echo "$line" | awk -F'|' '{print $8}' | tr -d ' ')
+        
+        if [ -n "$rx_byte" ] && [ "$rx_byte" -eq "$rx_byte" ] 2>/dev/null; then
+            rx_gbps=$(awk "BEGIN {printf \"%.2f\", $rx_byte * 8 / 1000000000}")
         else
-            echo "   $line"
+            rx_gbps="N/A"
         fi
+        
+        printf "   | %-4s | %-16s | %-17s | %-8s | %-6s | %-8s | %-8s | %-7s |\n" \
+               "$port" "$rx_pkts" "$rx_byte" "$rx_gbps" "$rx_drop" "$rx_drop_byte" "$rx_err" "$speed"
     done
+    
+    echo "   +------+------------------+-------------------+----------+--------+----------+----------+---------+"
 else
     echo "   ✗ DPDK状态检查工具不存在或不可执行 ($DPDK_STATUS)"
     RESULT="异常"
