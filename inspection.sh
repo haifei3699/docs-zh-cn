@@ -153,26 +153,12 @@ fi
 
 echo ""
 echo "3. 防火墙状态"
-if command -v iptables > /dev/null 2>&1; then
-    BLOCK_COUNT=$(iptables -L -n | grep -c "DROP\|REJECT")
-    echo "   防火墙阻断数量: $BLOCK_COUNT"
-    if [ $BLOCK_COUNT -gt 0 ]; then
-        echo "   警告: 存在防火墙阻断规则"
-    fi
-elif command -v firewalld > /dev/null 2>&1; then
-    BLOCK_COUNT=$(firewall-cmd --list-all | grep -c "deny\|block")
-    echo "   防火墙阻断数量: $BLOCK_COUNT"
-else
-    echo "   ✗ 未检测到防火墙工具"
-fi
-echo ""
-
-echo "4. IP策略数"
 FIREWALL_LOG="/opt/FwPolicy-Manager/FireWall.log"
 if [ -f "$FIREWALL_LOG" ]; then
     LAST_INFO=$(tail -20 "$FIREWALL_LOG" | grep "当前IP策略数" | tail -1)
     if [ -n "$LAST_INFO" ]; then
-        echo "   $LAST_INFO"
+        BLOCK_COUNT=$(echo "$LAST_INFO" | sed 's/.*当前IP策略数: //' | awk '{print $1}')
+        echo "   防火墙阻断数量: $BLOCK_COUNT"
     else
         echo "   未在日志中找到IP策略数信息"
     fi
@@ -180,6 +166,18 @@ else
     echo "   ✗ 防火墙日志文件不存在 ($FIREWALL_LOG)"
     RESULT="异常"
     PROBLEMS+=("防火墙日志文件不存在")
+fi
+echo ""
+
+echo "4. IP策略数"
+if [ -f "$FIREWALL_LOG" ]; then
+    if [ -n "$LAST_INFO" ]; then
+        echo "   $LAST_INFO"
+    else
+        echo "   未在日志中找到IP策略数信息"
+    fi
+else
+    echo "   ✗ 防火墙日志文件不存在 ($FIREWALL_LOG)"
 fi
 echo ""
 
