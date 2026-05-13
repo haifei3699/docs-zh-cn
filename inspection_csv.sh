@@ -1,7 +1,8 @@
 #!/bin/bash
 
-# 系统巡检脚本 - 单行键值对输出格式
-# 方便读取入库，字段名包含中英文
+# 系统巡检脚本 - CSV格式输出
+# 第一行：字段名称（中英文）
+# 第二行：对应的值
 
 # 初始化变量
 HOSTNAME=""
@@ -98,12 +99,22 @@ if [ ${#PROBLEMS[@]} -gt 0 ]; then
     PROBLEM_LIST=$(IFS=';'; echo "${PROBLEMS[*]}")
 fi
 
-# 处理特殊字符
-escape_value() {
-    echo "$1" | sed 's/=/\\=/g; s/,/\\,/g; s/\n/ /g'
+# 处理特殊字符，确保CSV格式正确
+escape_csv() {
+    local val="$1"
+    if [[ "$val" == *","* || "$val" == *"\""* || "$val" == *$'\n'* ]]; then
+        echo "\"${val//\"/\"\"}\""
+    else
+        echo "$val"
+    fi
 }
 
-# 输出单行键值对格式，包含中英文字段名
+# 输出CSV格式
+# 第一行：字段名称（中英文）
+# 第二行：对应的值
+
+echo "时间(Time),主机名(Hostname),IP地址(IP),操作系统(OS),系统架构(Arch),运行时长(Uptime),防火墙品牌(FWType),防火墙IP(FWIP),用户名(Username),密码(Password),base_url,BDS进程(BDSProcess),FwPolicy状态(FwPolicyStatus),IP策略数(IPPolicyCount),内存使用率(MemUsage),CPU使用率(CPUUsage),巡检结果(Result),问题列表(Problems)"
+
 TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
 
-echo "时间(Time)=$TIMESTAMP,主机名(Hostname)=$(escape_value "$HOSTNAME"),IP地址(IP)=$(escape_value "$IP"),操作系统(OS)=$(escape_value "$OS"),系统架构(Arch)=$(escape_value "$ARCH"),运行时长(Uptime)=$(escape_value "$UPTIME"),防火墙品牌(FWType)=$(escape_value "$FW_TYPE"),防火墙IP(FWIP)=$(escape_value "$FW_IP"),用户名(Username)=$(escape_value "$FW_USER"),密码(Password)=$(escape_value "$FW_PWD"),base_url=$(escape_value "$FW_BASE_URL"),BDS进程(BDSProcess)=$(escape_value "$BDS_PROCESS"),FwPolicy状态(FwPolicyStatus)=$(escape_value "$FW_POLICY_STATUS"),IP策略数(IPPolicyCount)=$(escape_value "$IP_POLICY_COUNT"),内存使用率(MemUsage)=$(escape_value "$MEM_USAGE"),CPU使用率(CPUUsage)=$(escape_value "$CPU_USAGE"),巡检结果(Result)=$(escape_value "$RESULT"),问题列表(Problems)=$(escape_value "$PROBLEM_LIST")"
+echo "$(escape_csv "$TIMESTAMP"),$(escape_csv "$HOSTNAME"),$(escape_csv "$IP"),$(escape_csv "$OS"),$(escape_csv "$ARCH"),$(escape_csv "$UPTIME"),$(escape_csv "$FW_TYPE"),$(escape_csv "$FW_IP"),$(escape_csv "$FW_USER"),$(escape_csv "$FW_PWD"),$(escape_csv "$FW_BASE_URL"),$(escape_csv "$BDS_PROCESS"),$(escape_csv "$FW_POLICY_STATUS"),$(escape_csv "$IP_POLICY_COUNT"),$(escape_csv "$MEM_USAGE"),$(escape_csv "$CPU_USAGE"),$(escape_csv "$RESULT"),$(escape_csv "$PROBLEM_LIST")"
