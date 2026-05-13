@@ -201,6 +201,50 @@ echo "磁盘使用率(Disk%):"
 df -h 2>/dev/null | grep -E '^/dev/' | awk '{print "   " $1 ": " $5 " (" $6 ")"}'
 echo ""
 
+echo "流量情况(Traffic):"
+echo "   【累计流量(系统启动以来)】"
+echo "   网卡      收包(bytes)    转发(bytes)    收包累计(G)    转发累计(G)"
+echo "   ---------------------------------------------------------------"
+if [ -f "/proc/net/dev" ]; then
+    cat /proc/net/dev | grep -E '^[[:space:]]*[a-z0-9]+:' | grep -v 'lo:' | while read -r line; do
+        iface=$(echo "$line" | awk '{print $1}' | sed 's/://')
+        rx=$(echo "$line" | awk '{print $2}')
+        tx=$(echo "$line" | awk '{print $10}')
+        if [ -n "$iface" ] && [[ "$iface" =~ ^[a-z] ]]; then
+            rx_gb=$(awk "BEGIN {printf \"%.2f\", $rx / 1024 / 1024 / 1024}")
+            tx_gb=$(awk "BEGIN {printf \"%.2f\", $tx / 1024 / 1024 / 1024}")
+            printf "   %-8s %-14s %-14s %-14s %s\n" "$iface" "$rx" "$tx" "$rx_gb" "$tx_gb"
+        fi
+    done
+else
+    echo "   无法获取流量统计"
+fi
+
+echo ""
+echo "   【实时流量(每秒)】"
+echo "   网卡      收包(Mbps)    转发(Mbps)    收包(Gbps)    转发(Gbps)"
+echo "   ---------------------------------------------------------------"
+if [ -f "/proc/net/dev" ]; then
+    RX1=$(cat /proc/net/dev | grep -v 'lo:' | grep -v 'face' | awk '{sum+=$2} END {print sum}')
+    TX1=$(cat /proc/net/dev | grep -v 'lo:' | grep -v 'face' | awk '{sum+=$10} END {print sum}')
+    sleep 1
+    RX2=$(cat /proc/net/dev | grep -v 'lo:' | grep -v 'face' | awk '{sum+=$2} END {print sum}')
+    TX2=$(cat /proc/net/dev | grep -v 'lo:' | grep -v 'face' | awk '{sum+=$10} END {print sum}')
+    
+    RX_DIFF=$((RX2 - RX1))
+    TX_DIFF=$((TX2 - TX1))
+    
+    RX_MBPS=$(awk "BEGIN {printf \"%.2f\", $RX_DIFF * 8 / 1000000}")
+    TX_MBPS=$(awk "BEGIN {printf \"%.2f\", $TX_DIFF * 8 / 1000000}")
+    RX_GBPS=$(awk "BEGIN {printf \"%.4f\", $RX_DIFF * 8 / 1000000000}")
+    TX_GBPS=$(awk "BEGIN {printf \"%.4f\", $TX_DIFF * 8 / 1000000000}")
+    
+    printf "   %-8s %-14s %-14s %-14s %s\n" "Total" "$RX_MBPS" "$TX_MBPS" "$RX_GBPS" "$TX_GBPS"
+else
+    echo "   无法获取流量统计"
+fi
+echo ""
+
 echo "[DPDK流量]"
 DPDK_STATUS="/opt/DPDK_driver/bin/DPDK_status"
 if [ -f "$DPDK_STATUS" ] && [ -x "$DPDK_STATUS" ]; then
