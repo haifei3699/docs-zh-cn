@@ -73,7 +73,7 @@ if [ -f "$BDS_CONF" ]; then
     echo "操作系统: $(cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d'"' -f2)"
     echo "系统架构: $(uname -m)"
     echo "启动时间: $(who -b 2>/dev/null | awk '{print $3, $4}')"
-    
+
     uptime_sec=$(cat /proc/uptime 2>/dev/null | awk '{print $1}' | cut -d'.' -f1)
     if [ -n "$uptime_sec" ]; then
         days=$((uptime_sec / 86400))
@@ -137,7 +137,7 @@ if [ -f "$SCRIPT_PATH" ]; then
     bash "$SCRIPT_PATH" 2>&1 | while read -r line; do
         echo "      $line"
     done
-    
+
     SCRIPT_EXIT_CODE=$?
     if [ $SCRIPT_EXIT_CODE -ne 0 ]; then
         echo ""
@@ -200,77 +200,13 @@ echo ""
 echo "磁盘使用率(Disk%):"
 df -h 2>/dev/null | grep -E '^/dev/' | awk '{print "   " $1 ": " $5 " (" $6 ")"}'
 echo ""
-echo "流量情况(Traffic):"
-echo "   【累计流量(系统启动以来)】"
-echo "   网卡      收包(bytes)    转发(bytes)    收包累计(G)    转发累计(G)"
-echo "   ---------------------------------------------------------------"
-if [ -f "/proc/net/dev" ]; then
-    cat /proc/net/dev | grep -E '^[[:space:]]*[a-z0-9]+:' | grep -v 'lo:' | while read -r line; do
-        iface=$(echo "$line" | awk '{print $1}' | sed 's/://')
-        rx=$(echo "$line" | awk '{print $2}')
-        tx=$(echo "$line" | awk '{print $10}')
-        if [ -n "$iface" ] && [[ "$iface" =~ ^[a-z] ]]; then
-            rx_gb=$(awk "BEGIN {printf \"%.2f\", $rx / 1024 / 1024 / 1024}")
-            tx_gb=$(awk "BEGIN {printf \"%.2f\", $tx / 1024 / 1024 / 1024}")
-            printf "   %-8s %-14s %-14s %-14s %s\n" "$iface" "$rx" "$tx" "$rx_gb" "$tx_gb"
-        fi
-    done
-else
-    echo "   无法获取流量统计"
-fi
-
-echo ""
-echo "   【实时流量(每秒)】"
-echo "   网卡      收包(Mbps)    转发(Mbps)    收包(Gbps)    转发(Gbps)"
-echo "   ---------------------------------------------------------------"
-if [ -f "/proc/net/dev" ]; then
-    RX1=$(cat /proc/net/dev | grep -v 'lo:' | grep -v 'face' | awk '{sum+=$2} END {print sum}')
-    TX1=$(cat /proc/net/dev | grep -v 'lo:' | grep -v 'face' | awk '{sum+=$10} END {print sum}')
-    sleep 1
-    RX2=$(cat /proc/net/dev | grep -v 'lo:' | grep -v 'face' | awk '{sum+=$2} END {print sum}')
-    TX2=$(cat /proc/net/dev | grep -v 'lo:' | grep -v 'face' | awk '{sum+=$10} END {print sum}')
-    
-    RX_DIFF=$((RX2 - RX1))
-    TX_DIFF=$((TX2 - TX1))
-    
-    RX_MBPS=$(awk "BEGIN {printf \"%.2f\", $RX_DIFF * 8 / 1000000}")
-    TX_MBPS=$(awk "BEGIN {printf \"%.2f\", $TX_DIFF * 8 / 1000000}")
-    RX_GBPS=$(awk "BEGIN {printf \"%.4f\", $RX_DIFF * 8 / 1000000000}")
-    TX_GBPS=$(awk "BEGIN {printf \"%.4f\", $TX_DIFF * 8 / 1000000000}")
-    
-    printf "   %-8s %-14s %-14s %-14s %s\n" "Total" "$RX_MBPS" "$TX_MBPS" "$RX_GBPS" "$TX_GBPS"
-else
-    echo "   无法获取流量统计"
-fi
-echo ""
 
 echo "[DPDK流量]"
 DPDK_STATUS="/opt/DPDK_driver/bin/DPDK_status"
 if [ -f "$DPDK_STATUS" ] && [ -x "$DPDK_STATUS" ]; then
-    echo "   +--------------------------------------------------------------------------------------------------+"
-    echo "   | 端口 | 收包数(Pkts)     | 收包字节(Bytes)    | 收包Gbps | 丢包数 | 丢包字节 | 错误包数 | 速度(M) |"
-    echo "   +------+------------------+-------------------+----------+--------+----------+----------+---------+"
-    
-    "$DPDK_STATUS" -p 2>/dev/null | grep -E '^\|[0-9]+' | while IFS= read -r line; do
-        port=$(echo "$line" | awk -F'|' '{print $2}' | tr -d ' ')
-        rx_pkts=$(echo "$line" | awk -F'|' '{print $3}' | tr -d ' ')
-        rx_byte=$(echo "$line" | awk -F'|' '{print $4}' | tr -d ' ')
-        rx_drop=$(echo "$line" | awk -F'|' '{print $5}' | tr -d ' ')
-        rx_drop_byte=$(echo "$line" | awk -F'|' '{print $6}' | tr -d ' ')
-        rx_err=$(echo "$line" | awk -F'|' '{print $7}' | tr -d ' ')
-        speed=$(echo "$line" | awk -F'|' '{print $8}' | tr -d ' ')
-        
-        if [ -n "$rx_byte" ] && [ "$rx_byte" -eq "$rx_byte" ] 2>/dev/null; then
-            rx_gbps=$(awk "BEGIN {printf \"%.2f\", $rx_byte * 8 / 1000000000}")
-        else
-            rx_gbps="N/A"
-        fi
-        
-        printf "   | %-4s | %-16s | %-17s | %-8s | %-6s | %-8s | %-8s | %-7s |\n" \
-               "$port" "$rx_pkts" "$rx_byte" "$rx_gbps" "$rx_drop" "$rx_drop_byte" "$rx_err" "$speed"
+    "$DPDK_STATUS" -p 2>/dev/null | while IFS= read -r line; do
+        echo "   $line"
     done
-    
-    echo "   +------+------------------+-------------------+----------+--------+----------+----------+---------+"
 else
     echo "   ✗ DPDK状态检查工具不存在或不可执行 ($DPDK_STATUS)"
     RESULT="异常"
