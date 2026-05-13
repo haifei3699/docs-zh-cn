@@ -8,10 +8,54 @@ echo ""
 RESULT="正常"
 PROBLEMS=()
 
+BDS_CONF="/opt/BDS/conf/BDS.json"
+
+get_json_value() {
+    local file=$1
+    local key=$2
+    if [ -f "$file" ]; then
+        cat "$file" | grep -oP '"'$key'"\s*:\s*"\K[^"]*' | head -1
+    fi
+}
+
 echo "[一、基本信息]"
 echo "巡检日期: $(date '+%Y-%m-%d %H:%M:%S')"
-echo "主机名: $(hostname)"
 echo ""
+
+if [ -f "$BDS_CONF" ]; then
+    echo "计算机名: $(get_json_value "$BDS_CONF" "computer_name")"
+    echo "设备编号: $(get_json_value "$BDS_CONF" "device_id")"
+    echo "使用单位: $(get_json_value "$BDS_CONF" "user_unit")"
+    echo "设备型号: $(get_json_value "$BDS_CONF" "device_model")"
+    echo "设备版本: $(get_json_value "$BDS_CONF" "device_version")"
+    echo "版本类型: $(get_json_value "$BDS_CONF" "version_type")"
+    echo "到期日期: $(get_json_value "$BDS_CONF" "expire_date")"
+    echo ""
+    echo "[系统信息]"
+    echo "系统IP: $(hostname -I | awk '{print $1}')"
+    echo "操作系统: $(cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d'"' -f2)"
+    echo "系统架构: $(uname -m)"
+    echo "启动时间: $(who -b 2>/dev/null | awk '{print $3, $4}')"
+    
+    uptime_sec=$(cat /proc/uptime 2>/dev/null | awk '{print $1}' | cut -d'.' -f1)
+    if [ -n "$uptime_sec" ]; then
+        days=$((uptime_sec / 86400))
+        hours=$(((uptime_sec % 86400) / 3600))
+        echo "运行时长: ${days}天${hours}小时"
+    fi
+    echo ""
+else
+    echo "✗ BDS配置文件不存在 ($BDS_CONF)"
+    RESULT="异常"
+    PROBLEMS+=("BDS配置文件不存在")
+    echo ""
+    echo "主机名: $(hostname)"
+    echo "系统IP: $(hostname -I | awk '{print $1}')"
+    echo "操作系统: $(cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d'"' -f2)"
+    echo "系统架构: $(uname -m)"
+    echo ""
+fi
+
 echo "[网络信息]"
 echo "网卡信息:"
 ip addr show 2>/dev/null | grep -E '^[0-9]+:' | while read -r iface_line; do
@@ -30,9 +74,6 @@ done
 echo ""
 echo "网关信息: $(ip route show 2>/dev/null | grep default | awk '{print $3}')"
 echo "DNS服务器: $(cat /etc/resolv.conf 2>/dev/null | grep nameserver | awk '{print $2}' | tr '\n' ',' | sed 's/,$//')"
-echo ""
-echo "操作系统: $(cat /etc/os-release | grep PRETTY_NAME | cut -d'"' -f2)"
-echo "内核版本: $(uname -r)"
 echo ""
 
 echo "[二、命令行巡检（进程/服务状态）]"
