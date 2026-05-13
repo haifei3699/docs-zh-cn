@@ -9,12 +9,21 @@ RESULT="正常"
 PROBLEMS=()
 
 BDS_CONF="/opt/BDS/conf/BDS.json"
+DPDK_CONF="/opt/DPDK_driver/conf/DPDK_driver.json"
 
 get_json_value() {
     local file=$1
     local key=$2
     if [ -f "$file" ]; then
         cat "$file" | grep -oP '"'$key'"\s*:\s*"\K[^"]*' | head -1
+    fi
+}
+
+get_json_array() {
+    local file=$1
+    local key=$2
+    if [ -f "$file" ]; then
+        cat "$file" | grep -A 100 "\"$key\"" | grep -E '\[.*\]' | head -1 | sed 's/\[//;s/\]//;s/"//g'
     fi
 }
 
@@ -44,6 +53,20 @@ if [ -f "$BDS_CONF" ]; then
     echo "外部标签模式(ExtTagMode): $(get_json_value_num "$BDS_CONF" "extern_tag_mode")"
     echo "NFQ_WebAct启用(NFQ_WebAct): $(get_json_value_num "$BDS_CONF" "NFQ_WebAct_enabled")"
     echo "VPN采样保存天数(VPN Days): $(get_json_value_num "$BDS_CONF" "vpn_sampled_savedays")"
+    echo ""
+    echo "[DPDK_driver.json配置]"
+    if [ -f "$DPDK_CONF" ]; then
+        echo "dump_port: $(get_json_array "$DPDK_CONF" "dump_port")"
+        echo "read_threads_per_port: $(get_json_value_num "$DPDK_CONF" "read_threads_per_port")"
+        echo "read_threads_sum: $(get_json_value_num "$DPDK_CONF" "read_threads_sum")"
+        echo "burst_size: $(get_json_value_num "$DPDK_CONF" "burst_size")"
+        echo "ring_size: $(get_json_value_num "$DPDK_CONF" "ring_size")"
+        echo "pkt_size: $(get_json_value_num "$DPDK_CONF" "pkt_size")"
+    else
+        echo "✗ DPDK_driver.json配置文件不存在 ($DPDK_CONF)"
+        RESULT="异常"
+        PROBLEMS+=("DPDK_driver.json配置文件不存在")
+    fi
     echo ""
     echo "[系统信息]"
     echo "系统IP: $(hostname -I | awk '{print $1}')"
