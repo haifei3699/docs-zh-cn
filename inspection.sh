@@ -40,14 +40,6 @@ get_json_value_num() {
 }
 
 if [ -f "$BDS_CONF" ]; then
-    echo "计算机名: $(get_json_value "$BDS_CONF" "computer_name")"
-    echo "设备编号: $(get_json_value "$BDS_CONF" "device_id")"
-    echo "使用单位: $(get_json_value "$BDS_CONF" "user_unit")"
-    echo "设备型号: $(get_json_value "$BDS_CONF" "device_model")"
-    echo "设备版本: $(get_json_value "$BDS_CONF" "device_version")"
-    echo "版本类型: $(get_json_value "$BDS_CONF" "version_type")"
-    echo "到期日期: $(get_json_value "$BDS_CONF" "expire_date")"
-    echo ""
     echo "[BDS.json配置]"
     echo "本地区域(Local Area): $(get_json_value "$BDS_CONF" "local_area")"
     echo "外部标签模式(ExtTagMode): $(get_json_value_num "$BDS_CONF" "extern_tag_mode")"
