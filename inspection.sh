@@ -337,6 +337,28 @@ else
     echo "   ✗ 目录不存在"
 fi
 
+# 检查BDS配置文件
+echo ""
+echo "4. /opt/BDS/conf/ 配置文件:"
+for file in BDS.json chl_ch_prefilter.ini cnl_chl_prefilter.ini dns_blacklist.ini SSLFP/ss_decrypt.ini web_list.ini; do
+    if [ -f "/opt/BDS/conf/$file" ]; then
+        ls -la "/opt/BDS/conf/$file" | awk '{print "   " $9 ": 大小=" $5 " bytes, 修改时间=" $6 " " $7 " " $8}'
+    else
+        echo "   $file: 文件不存在"
+    fi
+done
+
+# 检查脚本文件
+echo ""
+echo "5. 脚本文件:"
+for file in /opt/rnic/scripts/ip_filter.sh /opt/BDS/exe/check_services.sh; do
+    if [ -f "$file" ]; then
+        ls -la "$file" | awk '{print "   " $9 ": 大小=" $5 " bytes, 修改时间=" $6 " " $7 " " $8}'
+    else
+        echo "   $file: 文件不存在"
+    fi
+done
+
 echo ""
 
 echo "[四、系统监控(System Monitor)]"
