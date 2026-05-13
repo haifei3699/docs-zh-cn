@@ -304,7 +304,51 @@ else
 fi
 echo ""
 
-echo "[三、系统监控(System Monitor)]"
+echo "[三、程序更新时间]"
+echo "----------------------------------------"
+echo "程序文件列表:"
+
+# 检查BDS主程序
+echo ""
+echo "1. /opt/BDS/exe/BDS"
+if [ -f "/opt/BDS/exe/BDS" ]; then
+    ls -la "/opt/BDS/exe/BDS" | awk '{print "   大小: " $5 " bytes, 修改时间: " $6 " " $7 " " $8}'
+else
+    echo "   ✗ 文件不存在"
+fi
+
+# 检查bdsweb目录下的jar文件
+echo ""
+echo "2. /opt/bdsweb/ 目录:"
+for file in bdsweb_auth.jar bdsweb_eureka.jar bdsweb_log.jar bdsweb_shell.jar bdsweb_web.jar; do
+    if [ -f "/opt/bdsweb/$file" ]; then
+        ls -la "/opt/bdsweb/$file" | awk '{print "   " $9 ": 大小=" $5 " bytes, 修改时间=" $6 " " $7 " " $8}'
+    else
+        echo "   $file: 文件不存在"
+    fi
+done
+
+# 检查check_es.sh
+echo ""
+echo "3. /opt/bdsweb/check_es.sh"
+if [ -f "/opt/bdsweb/check_es.sh" ]; then
+    ls -la "/opt/bdsweb/check_es.sh" | awk '{print "   大小: " $5 " bytes, 修改时间: " $6 " " $7 " " $8}'
+else
+    echo "   ✗ 文件不存在"
+fi
+
+# 检查dist目录
+echo ""
+echo "4. /opt/bdsweb/dist/"
+if [ -d "/opt/bdsweb/dist" ]; then
+    ls -la "/opt/bdsweb/dist/" | head -10 | awk '{print "   " $9 ": 大小=" $5 " bytes, 修改时间=" $6 " " $7 " " $8}'
+else
+    echo "   ✗ 目录不存在"
+fi
+
+echo ""
+
+echo "[四、系统监控(System Monitor)]"
 echo "----------------------------------------"
 echo "内存使用率(Mem%): $(free | grep Mem | awk '{printf "%.1f%%", $3/$2*100}')"
 echo "CPU使用率(CPU%): $(top -bn1 | grep 'Cpu(s)' | sed 's/.*, *\([0-9.]*\)%* id.*/\1/' | awk '{printf "%.1f%%", 100 - $1}')"
