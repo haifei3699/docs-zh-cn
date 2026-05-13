@@ -74,16 +74,51 @@ if [ -f "$BDS_CONF" ]; then
         FW_TYPE=$(grep "^FW_TYPE" "$FW_SETTINGS" | head -1 | cut -d'=' -f2 | tr -d ' ')
         echo "防火墙品牌型号: $FW_TYPE"
         
-        BASE_URL=$(grep "^base_url" "$FW_SETTINGS" | head -1 | cut -d'=' -f2 | tr -d ' ')
-        echo "对方防火墙IP: $(echo "$BASE_URL" | sed -E 's|https?://([^:/]+).*|\1|')"
+        # 根据FW_TYPE找到对应的Firewall section
+        FW_SECTION="Firewall:${FW_TYPE}"
         
-        FW_USER=$(grep "^user" "$FW_SETTINGS" | head -1 | cut -d'=' -f2 | tr -d ' ')
-        echo "用户名: $FW_USER"
-        
-        FW_PWD=$(grep "^pwd" "$FW_SETTINGS" | head -1 | cut -d'=' -f2 | tr -d ' ')
-        echo "密码: $FW_PWD"
-        
-        echo "base_url: $BASE_URL"
+        # 提取该section中的配置
+        if grep -q "\[$FW_SECTION\]" "$FW_SETTINGS"; then
+            # 使用awk提取该section内的内容
+            BASE_URL=$(awk -v sec="[$FW_SECTION]" '
+                BEGIN { in_sec=0 }
+                $0 ~ sec { in_sec=1; next }
+                in_sec && /^\[/ { in_sec=0 }
+                in_sec && /^base_url/ { 
+                    sub(/^[^=]*=[[:space:]]*/, ""); 
+                    gsub(/`/, "");
+                    print $0 
+                }' "$FW_SETTINGS")
+            
+            FW_USER=$(awk -v sec="[$FW_SECTION]" '
+                BEGIN { in_sec=0 }
+                $0 ~ sec { in_sec=1; next }
+                in_sec && /^\[/ { in_sec=0 }
+                in_sec && /^user/ { 
+                    sub(/^[^=]*=[[:space:]]*/, ""); 
+                    gsub(/`/, "");
+                    print $0 
+                }' "$FW_SETTINGS")
+            
+            FW_PWD=$(awk -v sec="[$FW_SECTION]" '
+                BEGIN { in_sec=0 }
+                $0 ~ sec { in_sec=1; next }
+                in_sec && /^\[/ { in_sec=0 }
+                in_sec && /^pwd/ { 
+                    sub(/^[^=]*=[[:space:]]*/, ""); 
+                    gsub(/`/, "");
+                    print $0 
+                }' "$FW_SETTINGS")
+            
+            echo "对方防火墙IP: $(echo "$BASE_URL" | sed -E 's|https?://([^:/]+).*|\1|;s|ssh://([^:/]+).*|\1|')"
+            echo "用户名: $FW_USER"
+            echo "密码: $FW_PWD"
+            echo "base_url: $BASE_URL"
+        else
+            echo "✗ 未找到对应的防火墙配置section: [$FW_SECTION]"
+            RESULT="异常"
+            PROBLEMS+=("未找到对应防火墙配置")
+        fi
     else
         echo "✗ 防火墙配置文件不存在 ($FW_SETTINGS)"
         RESULT="异常"
@@ -114,16 +149,51 @@ else
         FW_TYPE=$(grep "^FW_TYPE" "$FW_SETTINGS" | head -1 | cut -d'=' -f2 | tr -d ' ')
         echo "防火墙品牌型号: $FW_TYPE"
         
-        BASE_URL=$(grep "^base_url" "$FW_SETTINGS" | head -1 | cut -d'=' -f2 | tr -d ' ')
-        echo "对方防火墙IP: $(echo "$BASE_URL" | sed -E 's|https?://([^:/]+).*|\1|')"
+        # 根据FW_TYPE找到对应的Firewall section
+        FW_SECTION="Firewall:${FW_TYPE}"
         
-        FW_USER=$(grep "^user" "$FW_SETTINGS" | head -1 | cut -d'=' -f2 | tr -d ' ')
-        echo "用户名: $FW_USER"
-        
-        FW_PWD=$(grep "^pwd" "$FW_SETTINGS" | head -1 | cut -d'=' -f2 | tr -d ' ')
-        echo "密码: $FW_PWD"
-        
-        echo "base_url: $BASE_URL"
+        # 提取该section中的配置
+        if grep -q "\[$FW_SECTION\]" "$FW_SETTINGS"; then
+            # 使用awk提取该section内的内容
+            BASE_URL=$(awk -v sec="[$FW_SECTION]" '
+                BEGIN { in_sec=0 }
+                $0 ~ sec { in_sec=1; next }
+                in_sec && /^\[/ { in_sec=0 }
+                in_sec && /^base_url/ { 
+                    sub(/^[^=]*=[[:space:]]*/, ""); 
+                    gsub(/`/, "");
+                    print $0 
+                }' "$FW_SETTINGS")
+            
+            FW_USER=$(awk -v sec="[$FW_SECTION]" '
+                BEGIN { in_sec=0 }
+                $0 ~ sec { in_sec=1; next }
+                in_sec && /^\[/ { in_sec=0 }
+                in_sec && /^user/ { 
+                    sub(/^[^=]*=[[:space:]]*/, ""); 
+                    gsub(/`/, "");
+                    print $0 
+                }' "$FW_SETTINGS")
+            
+            FW_PWD=$(awk -v sec="[$FW_SECTION]" '
+                BEGIN { in_sec=0 }
+                $0 ~ sec { in_sec=1; next }
+                in_sec && /^\[/ { in_sec=0 }
+                in_sec && /^pwd/ { 
+                    sub(/^[^=]*=[[:space:]]*/, ""); 
+                    gsub(/`/, "");
+                    print $0 
+                }' "$FW_SETTINGS")
+            
+            echo "对方防火墙IP: $(echo "$BASE_URL" | sed -E 's|https?://([^:/]+).*|\1|;s|ssh://([^:/]+).*|\1|')"
+            echo "用户名: $FW_USER"
+            echo "密码: $FW_PWD"
+            echo "base_url: $BASE_URL"
+        else
+            echo "✗ 未找到对应的防火墙配置section: [$FW_SECTION]"
+            RESULT="异常"
+            PROBLEMS+=("未找到对应防火墙配置")
+        fi
     else
         echo "✗ 防火墙配置文件不存在 ($FW_SETTINGS)"
         RESULT="异常"
