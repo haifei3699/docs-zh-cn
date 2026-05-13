@@ -22,6 +22,14 @@ echo "[一、基本信息]"
 echo "巡检日期: $(date '+%Y-%m-%d %H:%M:%S')"
 echo ""
 
+get_json_value_num() {
+    local file=$1
+    local key=$2
+    if [ -f "$file" ]; then
+        cat "$file" | grep -oP '"'$key'"\s*:\s*\K[0-9]+' | head -1
+    fi
+}
+
 if [ -f "$BDS_CONF" ]; then
     echo "计算机名: $(get_json_value "$BDS_CONF" "computer_name")"
     echo "设备编号: $(get_json_value "$BDS_CONF" "device_id")"
@@ -30,6 +38,11 @@ if [ -f "$BDS_CONF" ]; then
     echo "设备版本: $(get_json_value "$BDS_CONF" "device_version")"
     echo "版本类型: $(get_json_value "$BDS_CONF" "version_type")"
     echo "到期日期: $(get_json_value "$BDS_CONF" "expire_date")"
+    echo ""
+    echo "本地区域: $(get_json_value "$BDS_CONF" "local_area")"
+    echo "外部标签模式: $(get_json_value_num "$BDS_CONF" "extern_tag_mode")"
+    echo "NFQ_WebAct启用: $(get_json_value_num "$BDS_CONF" "NFQ_WebAct_enabled")"
+    echo "VPN采样保存天数: $(get_json_value_num "$BDS_CONF" "vpn_sampled_savedays")"
     echo ""
     echo "[系统信息]"
     echo "系统IP: $(hostname -I | awk '{print $1}')"
