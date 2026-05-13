@@ -220,8 +220,8 @@ fi
 
 echo ""
 echo "   【实时流量(每秒)】"
-echo "   网卡      收包(MB)      转发(MB)      收包(Mbps)    转发(Mbps)    收包(Gbps)    转发(Gbps)"
-echo "   --------------------------------------------------------------------------------------------"
+echo "   网卡      收包(MB)      转发(MB)      收包(Mbps)    转发(Mbps)"
+echo "   ---------------------------------------------------------------"
 if [ -f "/proc/net/dev" ]; then
     TEMP_FILE=$(mktemp)
     
@@ -246,10 +246,8 @@ if [ -f "/proc/net/dev" ]; then
             tx_mb=$(awk "BEGIN {printf \"%.2f\", $tx_diff / 1024 / 1024}")
             rx_mbps=$(awk "BEGIN {printf \"%.2f\", $rx_diff * 8 / 1000000}")
             tx_mbps=$(awk "BEGIN {printf \"%.2f\", $tx_diff * 8 / 1000000}")
-            rx_gbps=$(awk "BEGIN {printf \"%.4f\", $rx_diff * 8 / 1000000000}")
-            tx_gbps=$(awk "BEGIN {printf \"%.4f\", $tx_diff * 8 / 1000000000}")
             
-            printf "   %-8s %-14s %-14s %-14s %-14s %-14s %s\n" "$iface" "$rx_mb" "$tx_mb" "$rx_mbps" "$tx_mbps" "$rx_gbps" "$tx_gbps"
+            printf "   %-8s %-14s %-14s %-14s %s\n" "$iface" "$rx_mb" "$tx_mb" "$rx_mbps" "$tx_mbps"
         fi
     done < "$TEMP_FILE"
     
