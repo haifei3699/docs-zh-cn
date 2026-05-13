@@ -202,6 +202,20 @@ else
 fi
 echo ""
 
+echo "[DPDK流量]"
+DPDK_STATUS="/opt/DPDK_driver/bin/bin/DPDK_status"
+if [ -f "$DPDK_STATUS" ] && [ -x "$DPDK_STATUS" ]; then
+    echo "   执行DPDK状态检查:"
+    "$DPDK_STATUS" -p 2>/dev/null | while read -r line; do
+        echo "   $line"
+    done
+else
+    echo "   ✗ DPDK状态检查工具不存在或不可执行 ($DPDK_STATUS)"
+    RESULT="异常"
+    PROBLEMS+=("DPDK状态检查工具不存在")
+fi
+echo ""
+
 echo "[四、磁盘空间检查(Disk Space)]"
 df -h | grep -E '^/dev/'
 echo ""
