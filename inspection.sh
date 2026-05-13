@@ -204,8 +204,7 @@ echo ""
 echo "[DPDK流量]"
 DPDK_STATUS="/opt/DPDK_driver/bin/DPDK_status"
 if [ -f "$DPDK_STATUS" ] && [ -x "$DPDK_STATUS" ]; then
-    echo "   字段说明: PORT(端口) | rx_pkts(收包数) | rx_byte(收包字节) | rx_drop_pkts(丢包数) | rx_drop_byte(丢包字节) | rx_err_pkts(错误包数) | Speed(M)(速度Mbps)"
-    echo ""
+    echo "   |端口   | 收包数       | 收包字节        | 丢包数         | 丢包字节       | 错误包数       | 速度(M) |"
     "$DPDK_STATUS" -p 2>/dev/null | while IFS= read -r line; do
         echo "   $line"
     done
