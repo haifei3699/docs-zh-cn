@@ -167,6 +167,22 @@ else
 fi
 echo ""
 
+echo "4. IP策略数"
+FIREWALL_LOG="/opt/FwPolicy-Manager/fireWall.log"
+if [ -f "$FIREWALL_LOG" ]; then
+    LAST_INFO=$(tail -20 "$FIREWALL_LOG" | grep "当前IP策略数" | tail -1)
+    if [ -n "$LAST_INFO" ]; then
+        echo "   $LAST_INFO"
+    else
+        echo "   未在日志中找到IP策略数信息"
+    fi
+else
+    echo "   ✗ 防火墙日志文件不存在 ($FIREWALL_LOG)"
+    RESULT="异常"
+    PROBLEMS+=("防火墙日志文件不存在")
+fi
+echo ""
+
 echo "[三、系统监控(System Monitor)]"
 echo "----------------------------------------"
 echo "内存使用率(Mem%): $(free | grep Mem | awk '{printf "%.1f%%", $3/$2*100}')"
