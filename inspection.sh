@@ -116,24 +116,12 @@ echo ""
 echo "[二、命令行巡检（进程/服务状态）]"
 echo ""
 
-echo "1. 进程检查 - BDS进程"
-if ps aux | grep -E '[b]ds|BDS' > /dev/null 2>&1; then
-    echo "   ✓ BDS进程存在"
-    echo "   进程详情:"
-    ps aux | grep -E '[b]ds|BDS'
-else
-    echo "   ✗ BDS进程不存在"
-    RESULT="异常"
-    PROBLEMS+=("BDS进程不存在")
-fi
-echo ""
-
-echo "2. 脚本检查 - 系统服务/进程状态"
+echo "1. 系统服务/进程检查"
 SCRIPT_PATH="/opt/BDS/exe/check_services.sh"
 if [ -f "$SCRIPT_PATH" ]; then
     echo "   ✓ check_services.sh 脚本存在 ($SCRIPT_PATH)"
     echo ""
-    echo "   执行脚本检查结果:"
+    echo "   检查结果:"
     bash "$SCRIPT_PATH" 2>&1 | while read -r line; do
         echo "      $line"
     done
@@ -141,9 +129,9 @@ if [ -f "$SCRIPT_PATH" ]; then
     SCRIPT_EXIT_CODE=$?
     if [ $SCRIPT_EXIT_CODE -ne 0 ]; then
         echo ""
-        echo "   ✗ 脚本执行返回异常状态码: $SCRIPT_EXIT_CODE"
+        echo "   ✗ 检查执行返回异常状态码: $SCRIPT_EXIT_CODE"
         RESULT="异常"
-        PROBLEMS+=("check_services.sh脚本执行异常")
+        PROBLEMS+=("系统服务检查执行异常")
     fi
 else
     echo "   ✗ check_services.sh 脚本不存在 ($SCRIPT_PATH)"
@@ -152,7 +140,7 @@ else
 fi
 
 echo ""
-echo "3. 防火墙状态"
+echo "2. 防火墙状态"
 FIREWALL_LOG="/opt/FwPolicy-Manager/FireWall.log"
 if [ -f "$FIREWALL_LOG" ]; then
     LAST_INFO=$(tail -20 "$FIREWALL_LOG" | grep "当前IP策略数" | tail -1)
@@ -169,7 +157,7 @@ else
 fi
 echo ""
 
-echo "4. IP策略数"
+echo "3. IP策略数"
 if [ -f "$FIREWALL_LOG" ]; then
     if [ -n "$LAST_INFO" ]; then
         echo "   $LAST_INFO"
