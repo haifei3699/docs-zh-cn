@@ -70,37 +70,23 @@ if [ -f "$BDS_CONF" ]; then
         FW_SECTION="Firewall:${FW_TYPE}"
         
         # 提取该section中的配置
-        if grep -q "\[$FW_SECTION\]" "$FW_SETTINGS"; then
-            # 使用awk提取该section内的内容
-            BASE_URL=$(awk -v sec="[$FW_SECTION]" '
-                BEGIN { in_sec=0 }
-                $0 ~ sec { in_sec=1; next }
-                in_sec && /^\[/ { in_sec=0 }
-                in_sec && /^base_url/ { 
-                    sub(/^[^=]*=[[:space:]]*/, ""); 
-                    gsub(/`/, "");
-                    print $0 
-                }' "$FW_SETTINGS")
+        if grep -q "^\[$FW_SECTION\]" "$FW_SETTINGS"; then
+            # 找到section开始的行号
+            start_line=$(grep -n "^\[$FW_SECTION\]" "$FW_SETTINGS" | cut -d':' -f1)
+            # 找到下一个section的行号（或者文件末尾）
+            next_section=$(awk -v start=$start_line 'NR > start && /^\[/ { print NR; exit }' "$FW_SETTINGS")
+            if [ -z "$next_section" ]; then
+                next_section=$(wc -l < "$FW_SETTINGS")
+                next_section=$((next_section + 1))
+            fi
             
-            FW_USER=$(awk -v sec="[$FW_SECTION]" '
-                BEGIN { in_sec=0 }
-                $0 ~ sec { in_sec=1; next }
-                in_sec && /^\[/ { in_sec=0 }
-                in_sec && /^user/ { 
-                    sub(/^[^=]*=[[:space:]]*/, ""); 
-                    gsub(/`/, "");
-                    print $0 
-                }' "$FW_SETTINGS")
+            # 提取section范围内的内容
+            section_content=$(sed -n "$((start_line+1)),$((next_section-1))p" "$FW_SETTINGS")
             
-            FW_PWD=$(awk -v sec="[$FW_SECTION]" '
-                BEGIN { in_sec=0 }
-                $0 ~ sec { in_sec=1; next }
-                in_sec && /^\[/ { in_sec=0 }
-                in_sec && /^pwd/ { 
-                    sub(/^[^=]*=[[:space:]]*/, ""); 
-                    gsub(/`/, "");
-                    print $0 
-                }' "$FW_SETTINGS")
+            # 提取各个配置项
+            BASE_URL=$(echo "$section_content" | grep "^base_url" | head -1 | cut -d'=' -f2 | sed 's/^[[:space:]]*//;s/`//g')
+            FW_USER=$(echo "$section_content" | grep "^user" | head -1 | cut -d'=' -f2 | sed 's/^[[:space:]]*//;s/`//g')
+            FW_PWD=$(echo "$section_content" | grep "^pwd" | head -1 | cut -d'=' -f2 | sed 's/^[[:space:]]*//;s/`//g')
             
             echo "对方防火墙IP: $(echo "$BASE_URL" | sed -E 's|https?://([^:/]+).*|\1|;s|ssh://([^:/]+).*|\1|')"
             echo "用户名: $FW_USER"
@@ -145,37 +131,23 @@ else
         FW_SECTION="Firewall:${FW_TYPE}"
         
         # 提取该section中的配置
-        if grep -q "\[$FW_SECTION\]" "$FW_SETTINGS"; then
-            # 使用awk提取该section内的内容
-            BASE_URL=$(awk -v sec="[$FW_SECTION]" '
-                BEGIN { in_sec=0 }
-                $0 ~ sec { in_sec=1; next }
-                in_sec && /^\[/ { in_sec=0 }
-                in_sec && /^base_url/ { 
-                    sub(/^[^=]*=[[:space:]]*/, ""); 
-                    gsub(/`/, "");
-                    print $0 
-                }' "$FW_SETTINGS")
+        if grep -q "^\[$FW_SECTION\]" "$FW_SETTINGS"; then
+            # 找到section开始的行号
+            start_line=$(grep -n "^\[$FW_SECTION\]" "$FW_SETTINGS" | cut -d':' -f1)
+            # 找到下一个section的行号（或者文件末尾）
+            next_section=$(awk -v start=$start_line 'NR > start && /^\[/ { print NR; exit }' "$FW_SETTINGS")
+            if [ -z "$next_section" ]; then
+                next_section=$(wc -l < "$FW_SETTINGS")
+                next_section=$((next_section + 1))
+            fi
             
-            FW_USER=$(awk -v sec="[$FW_SECTION]" '
-                BEGIN { in_sec=0 }
-                $0 ~ sec { in_sec=1; next }
-                in_sec && /^\[/ { in_sec=0 }
-                in_sec && /^user/ { 
-                    sub(/^[^=]*=[[:space:]]*/, ""); 
-                    gsub(/`/, "");
-                    print $0 
-                }' "$FW_SETTINGS")
+            # 提取section范围内的内容
+            section_content=$(sed -n "$((start_line+1)),$((next_section-1))p" "$FW_SETTINGS")
             
-            FW_PWD=$(awk -v sec="[$FW_SECTION]" '
-                BEGIN { in_sec=0 }
-                $0 ~ sec { in_sec=1; next }
-                in_sec && /^\[/ { in_sec=0 }
-                in_sec && /^pwd/ { 
-                    sub(/^[^=]*=[[:space:]]*/, ""); 
-                    gsub(/`/, "");
-                    print $0 
-                }' "$FW_SETTINGS")
+            # 提取各个配置项
+            BASE_URL=$(echo "$section_content" | grep "^base_url" | head -1 | cut -d'=' -f2 | sed 's/^[[:space:]]*//;s/`//g')
+            FW_USER=$(echo "$section_content" | grep "^user" | head -1 | cut -d'=' -f2 | sed 's/^[[:space:]]*//;s/`//g')
+            FW_PWD=$(echo "$section_content" | grep "^pwd" | head -1 | cut -d'=' -f2 | sed 's/^[[:space:]]*//;s/`//g')
             
             echo "对方防火墙IP: $(echo "$BASE_URL" | sed -E 's|https?://([^:/]+).*|\1|;s|ssh://([^:/]+).*|\1|')"
             echo "用户名: $FW_USER"
