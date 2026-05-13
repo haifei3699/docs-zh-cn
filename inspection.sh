@@ -257,9 +257,16 @@ echo ""
 echo "2. 防火墙状态"
 FIREWALL_LOG="/opt/FwPolicy-Manager/FireWall.log"
 if [ -f "$FIREWALL_LOG" ]; then
-    LAST_INFO=$(tail -20 "$FIREWALL_LOG" | grep "当前IP策略数" | tail -1)
+    # 查找最新的"分线等级2"记录，确保是最新的
+    LAST_INFO=$(tac "$FIREWALL_LOG" | grep "分线等级2" -m 1)
     if [ -n "$LAST_INFO" ]; then
+        # 反转回来保持顺序
+        LAST_INFO=$(echo "$LAST_INFO" | rev | rev)
+        
+        # 提取时间戳和策略数
         BLOCK_COUNT=$(echo "$LAST_INFO" | sed 's/.*当前IP策略数: //' | awk '{print $1}')
+        
+        echo "   $LAST_INFO"
         echo "   防火墙阻断数量: $BLOCK_COUNT"
     else
         echo "   未在日志中找到IP策略数信息"
@@ -271,19 +278,7 @@ else
 fi
 echo ""
 
-echo "3. IP策略数"
-if [ -f "$FIREWALL_LOG" ]; then
-    if [ -n "$LAST_INFO" ]; then
-        echo "   $LAST_INFO"
-    else
-        echo "   未在日志中找到IP策略数信息"
-    fi
-else
-    echo "   ✗ 防火墙日志文件不存在 ($FIREWALL_LOG)"
-fi
-echo ""
-
-echo "4. 阻断程序状态"
+echo "3. 阻断程序状态"
 if systemctl is-active --quiet FwPolicy.service; then
     echo "   ✓ FwPolicy.service 正在运行"
     
