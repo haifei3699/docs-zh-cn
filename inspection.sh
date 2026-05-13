@@ -56,12 +56,12 @@ if [ -f "$BDS_CONF" ]; then
     echo ""
     echo "[DPDK_driver.json配置]"
     if [ -f "$DPDK_CONF" ]; then
-        echo "dump_port: $(get_json_array "$DPDK_CONF" "dump_port")"
-        echo "read_threads_per_port: $(get_json_value_num "$DPDK_CONF" "read_threads_per_port")"
-        echo "read_threads_sum: $(get_json_value_num "$DPDK_CONF" "read_threads_sum")"
-        echo "burst_size: $(get_json_value_num "$DPDK_CONF" "burst_size")"
-        echo "ring_size: $(get_json_value_num "$DPDK_CONF" "ring_size")"
-        echo "pkt_size: $(get_json_value_num "$DPDK_CONF" "pkt_size")"
+        echo "转储端口(Dump Port): $(cat "$DPDK_CONF" | grep -A 5 '"dump_port"' | grep -E '\[.*\]' | head -1 | sed 's/\[//;s/\]//;s/"//g;s/, */, /g')"
+        echo "每端口线程数(Threads/Port): $(get_json_value_num "$DPDK_CONF" "read_threads_per_port")"
+        echo "线程总数(Threads Total): $(get_json_value_num "$DPDK_CONF" "read_threads_sum")"
+        echo "突发大小(Burst Size): $(get_json_value_num "$DPDK_CONF" "burst_size")"
+        echo "环形大小(Ring Size): $(get_json_value_num "$DPDK_CONF" "ring_size")"
+        echo "数据包大小(Pkt Size): $(get_json_value_num "$DPDK_CONF" "pkt_size")"
     else
         echo "✗ DPDK_driver.json配置文件不存在 ($DPDK_CONF)"
         RESULT="异常"
@@ -186,16 +186,20 @@ df -h 2>/dev/null | grep -E '^/dev/' | awk '{print "   " $1 ": " $5 " (" $6 ")"}
 echo ""
 echo "流量情况(Traffic):"
 echo "   收包/转发统计:"
-echo "   网卡      收包(bytes)    转发(bytes)    收包(Mbps)    转发(Mbps)"
-echo "   ---------------------------------------------------------------"
+echo "   网卡      收包(bytes)    转发(bytes)    收包(Mbps)    转发(Mbps)    收包(Gbps)    转发(Gbps)"
+echo "   --------------------------------------------------------------------------------------------"
 if [ -f "/proc/net/dev" ]; then
-    cat /proc/net/dev | grep -v 'lo' | grep -v 'virbr' | grep -E '^[[:space:]]*[a-z]' | while read -r line; do
+    cat /proc/net/dev | grep -E '^[[:space:]]*[a-z0-9]+:' | grep -v 'lo:' | while read -r line; do
         iface=$(echo "$line" | awk '{print $1}' | sed 's/://')
         rx=$(echo "$line" | awk '{print $2}')
         tx=$(echo "$line" | awk '{print $10}')
-        rx_mbps=$(echo "scale=2; $rx * 8 / 1000000" | bc)
-        tx_mbps=$(echo "scale=2; $tx * 8 / 1000000" | bc)
-        printf "   %-8s %-14s %-14s %-14s %s\n" "$iface" "$rx" "$tx" "$rx_mbps" "$tx_mbps"
+        if [ -n "$iface" ] && [[ "$iface" =~ ^[a-z] ]]; then
+            rx_mbps=$(awk "BEGIN {printf \"%.2f\", $rx * 8 / 1000000}")
+            tx_mbps=$(awk "BEGIN {printf \"%.2f\", $tx * 8 / 1000000}")
+            rx_gbps=$(awk "BEGIN {printf \"%.4f\", $rx * 8 / 1000000000}")
+            tx_gbps=$(awk "BEGIN {printf \"%.4f\", $tx * 8 / 1000000000}")
+            printf "   %-8s %-14s %-14s %-14s %-14s %-14s %s\n" "$iface" "$rx" "$tx" "$rx_mbps" "$tx_mbps" "$rx_gbps" "$tx_gbps"
+        fi
     done
 else
     echo "   无法获取流量统计"
