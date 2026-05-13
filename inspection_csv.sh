@@ -31,13 +31,16 @@ DNS=$(cat /etc/resolv.conf 2>/dev/null | grep nameserver | awk '{print $2}' | tr
 
 # 获取所有网卡信息（包括IP、网关、MAC）
 NETWORK_INFO=""
-for iface in $(ip link show 2>/dev/null | grep -E '^[0-9]+:' | awk -F': ' '{print $2}' | grep -v 'lo' | grep -v 'virbr'); do
-    ipv4=$(ip addr show "$iface" 2>/dev/null | grep -m1 'inet ' | awk '{print $2}')
-    mac=$(ip addr show "$iface" 2>/dev/null | grep -m1 'link/ether' | awk '{print $2}')
+for iface in $(ip link show 2>/dev/null | grep -E '^[0-9]+:' | awk -F': ' '{print $2}' | awk '{print $1}' | grep -v 'lo' | grep -v 'virbr'); do
+    # 清理接口名（去除 @ 后面的部分）
+    clean_iface=$(echo "$iface" | sed 's/@.*//')
+    ipv4=$(ip addr show "$clean_iface" 2>/dev/null | grep -m1 'inet ' | awk '{print $2}')
+    mac=$(ip addr show "$clean_iface" 2>/dev/null | grep -m1 'link/ether' | awk '{print $2}')
     # 获取该网卡的网关
-    gateway=$(ip route show 2>/dev/null | grep "dev $iface" | grep default | awk '{print $3}')
+    gateway=$(ip route show 2>/dev/null | grep "dev $clean_iface" | grep default | awk '{print $3}')
     if [ -n "$ipv4" ]; then
-        NETWORK_INFO="${NETWORK_INFO}${iface}:${ipv4}:${mac}:${gateway};"
+        # 使用 | 作为分隔符，避免与MAC地址中的冒号冲突
+        NETWORK_INFO="${NETWORK_INFO}${clean_iface}|${ipv4}|${mac}|${gateway};"
     fi
 done
 NETWORK_INFO=$(echo "$NETWORK_INFO" | sed 's/;$//')
@@ -224,17 +227,21 @@ print_field "运行时长:" "$UPTIME"
 echo ""
 
 echo "[网络信息]"
-print_field "DNS服务器:" "$DNS"
-# 显示每个网卡的信息
+# DNS服务器单独显示
+DNS1=$(echo "$DNS" | cut -d',' -f1)
+DNS2=$(echo "$DNS" | cut -d',' -f2)
+print_field "DNS1:" "$DNS1"
+[ -n "$DNS2" ] && print_field "DNS2:" "$DNS2"
+
+# 显示每个网卡的信息（每个字段单独一行）
 IFS=';' read -ra NET_ARRAY <<< "$NETWORK_INFO"
 for net_item in "${NET_ARRAY[@]}"; do
-    IFS=':' read -ra NET_PARTS <<< "$net_item"
-    if [ ${#NET_PARTS[@]} -ge 4 ]; then
-        print_field "网卡 ${NET_PARTS[0]}:" "IP=${NET_PARTS[1]}, MAC=${NET_PARTS[2]}, 网关=${NET_PARTS[3]}"
-    elif [ ${#NET_PARTS[@]} -ge 3 ]; then
-        print_field "网卡 ${NET_PARTS[0]}:" "IP=${NET_PARTS[1]}, MAC=${NET_PARTS[2]}"
-    elif [ ${#NET_PARTS[@]} -ge 2 ]; then
-        print_field "网卡 ${NET_PARTS[0]}:" "IP=${NET_PARTS[1]}"
+    IFS='|' read -ra NET_PARTS <<< "$net_item"
+    iface_name="${NET_PARTS[0]}"
+    if [ -n "$iface_name" ]; then
+        print_field "网卡${iface_name}IP:" "${NET_PARTS[1]}"
+        print_field "网卡${iface_name}MAC:" "${NET_PARTS[2]}"
+        print_field "网卡${iface_name}网关:" "${NET_PARTS[3]}"
     fi
 done
 echo ""
