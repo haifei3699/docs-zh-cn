@@ -27,8 +27,20 @@ fi
 BOOT_TIME=$(who -b 2>/dev/null | awk '{print $3, $4}')
 
 # 网关和DNS
-GATEWAY=$(ip route show 2>/dev/null | grep default | awk '{print $3}')
 DNS=$(cat /etc/resolv.conf 2>/dev/null | grep nameserver | awk '{print $2}' | tr '\n' ',' | sed 's/,$//')
+
+# 获取所有网卡信息（包括IP、网关、MAC）
+NETWORK_INFO=""
+for iface in $(ip link show 2>/dev/null | grep -E '^[0-9]+:' | awk -F': ' '{print $2}' | grep -v 'lo' | grep -v 'virbr'); do
+    ipv4=$(ip addr show "$iface" 2>/dev/null | grep -m1 'inet ' | awk '{print $2}')
+    mac=$(ip addr show "$iface" 2>/dev/null | grep -m1 'link/ether' | awk '{print $2}')
+    # 获取该网卡的网关
+    gateway=$(ip route show 2>/dev/null | grep "dev $iface" | grep default | awk '{print $3}')
+    if [ -n "$ipv4" ]; then
+        NETWORK_INFO="${NETWORK_INFO}${iface}:${ipv4}:${mac}:${gateway};"
+    fi
+done
+NETWORK_INFO=$(echo "$NETWORK_INFO" | sed 's/;$//')
 
 # BDS.json配置
 BDS_CONF="/opt/BDS/conf/BDS.json"
@@ -205,13 +217,26 @@ echo ""
 echo "[基本信息]"
 print_field "巡检日期:" "$TIMESTAMP"
 print_field "主机名:" "$HOSTNAME"
-print_field "IP地址:" "$IP"
 print_field "操作系统:" "$OS"
 print_field "系统架构:" "$ARCH"
 print_field "启动时间:" "$BOOT_TIME"
 print_field "运行时长:" "$UPTIME"
-print_field "网关:" "$GATEWAY"
+echo ""
+
+echo "[网络信息]"
 print_field "DNS服务器:" "$DNS"
+# 显示每个网卡的信息
+IFS=';' read -ra NET_ARRAY <<< "$NETWORK_INFO"
+for net_item in "${NET_ARRAY[@]}"; do
+    IFS=':' read -ra NET_PARTS <<< "$net_item"
+    if [ ${#NET_PARTS[@]} -ge 4 ]; then
+        print_field "网卡 ${NET_PARTS[0]}:" "IP=${NET_PARTS[1]}, MAC=${NET_PARTS[2]}, 网关=${NET_PARTS[3]}"
+    elif [ ${#NET_PARTS[@]} -ge 3 ]; then
+        print_field "网卡 ${NET_PARTS[0]}:" "IP=${NET_PARTS[1]}, MAC=${NET_PARTS[2]}"
+    elif [ ${#NET_PARTS[@]} -ge 2 ]; then
+        print_field "网卡 ${NET_PARTS[0]}:" "IP=${NET_PARTS[1]}"
+    fi
+done
 echo ""
 
 echo "[BDS.json配置]"
