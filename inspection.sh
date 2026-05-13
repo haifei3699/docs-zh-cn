@@ -201,7 +201,7 @@ echo ""
 
 echo "流量情况(Traffic):"
 echo "   【累计流量(系统启动以来)】"
-echo "   网卡      收包(bytes)    转发(bytes)    收包累计(G)    转发累计(G)"
+echo "   网卡      收包(bytes)    转发(bytes)    收包累计(M)    转发累计(M)"
 echo "   ---------------------------------------------------------------"
 if [ -f "/proc/net/dev" ]; then
     cat /proc/net/dev | grep -E '^[[:space:]]*[a-z0-9]+:' | grep -v 'lo:' | while read -r line; do
@@ -209,9 +209,9 @@ if [ -f "/proc/net/dev" ]; then
         rx=$(echo "$line" | awk '{print $2}')
         tx=$(echo "$line" | awk '{print $10}')
         if [ -n "$iface" ] && [[ "$iface" =~ ^[a-z] ]]; then
-            rx_gb=$(awk "BEGIN {printf \"%.2f\", $rx / 1024 / 1024 / 1024}")
-            tx_gb=$(awk "BEGIN {printf \"%.2f\", $tx / 1024 / 1024 / 1024}")
-            printf "   %-8s %-14s %-14s %-14s %s\n" "$iface" "$rx" "$tx" "$rx_gb" "$tx_gb"
+            rx_mb=$(awk "BEGIN {printf \"%.2f\", $rx / 1024 / 1024}")
+            tx_mb=$(awk "BEGIN {printf \"%.2f\", $tx / 1024 / 1024}")
+            printf "   %-8s %-14s %-14s %-14s %s\n" "$iface" "$rx" "$tx" "$rx_mb" "$tx_mb"
         fi
     done
 else
