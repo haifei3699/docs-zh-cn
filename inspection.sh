@@ -207,7 +207,7 @@ fi
 echo ""
 
 echo "[DPDK流量]"
-DPDK_STATUS="/opt/DPDK_driver/bin/bin/DPDK_status"
+DPDK_STATUS="/opt/DPDK_driver/bin/DPDK_status"
 if [ -f "$DPDK_STATUS" ] && [ -x "$DPDK_STATUS" ]; then
     echo "   执行DPDK状态检查:"
     "$DPDK_STATUS" -p 2>/dev/null | while read -r line; do
