@@ -168,7 +168,7 @@ fi
 echo ""
 
 echo "4. IP策略数"
-FIREWALL_LOG="/opt/FwPolicy-Manager/fireWall.log"
+FIREWALL_LOG="/opt/FwPolicy-Manager/FireWall.log"
 if [ -f "$FIREWALL_LOG" ]; then
     LAST_INFO=$(tail -20 "$FIREWALL_LOG" | grep "当前IP策略数" | tail -1)
     if [ -n "$LAST_INFO" ]; then
