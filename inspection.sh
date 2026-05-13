@@ -11,6 +11,7 @@ PROBLEMS=()
 echo "[一、基本信息]"
 echo "巡检日期: $(date '+%Y-%m-%d %H:%M:%S')"
 echo "主机名: $(hostname)"
+echo "IP地址: $(hostname -I | awk '{print $1}')"
 echo "操作系统: $(cat /etc/os-release | grep PRETTY_NAME | cut -d'"' -f2)"
 echo "内核版本: $(uname -r)"
 echo ""
@@ -31,10 +32,11 @@ fi
 echo ""
 
 echo "2. 脚本检查 - 系统服务/进程状态"
-if [ -f "/etc/init.d/check_services.sh" ] || [ -f "/usr/local/bin/check_services.sh" ] || [ -f "./check_services.sh" ]; then
-    echo "   ✓ check_services.sh 脚本存在"
+SCRIPT_PATH="/opt/BDS/exe/check_services.sh"
+if [ -f "$SCRIPT_PATH" ]; then
+    echo "   ✓ check_services.sh 脚本存在 ($SCRIPT_PATH)"
 else
-    echo "   ✗ check_services.sh 脚本不存在"
+    echo "   ✗ check_services.sh 脚本不存在 ($SCRIPT_PATH)"
     RESULT="异常"
     PROBLEMS+=("check_services.sh脚本不存在")
 fi
