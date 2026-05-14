@@ -170,12 +170,15 @@ if [ -f "$DPDK_STATUS" ] && [ -x "$DPDK_STATUS" ]; then
     # 获取DPDK状态输出
     DPDK_FULL_OUTPUT=$("$DPDK_STATUS" -p 2>/dev/null)
     if [ -n "$DPDK_FULL_OUTPUT" ]; then
-        # 从Total行提取Speed(M)列的值
-        # 格式: |Total | xxx | xxx | ... | 9476 |
-        DPDK_SPEED=$(echo "$DPDK_FULL_OUTPUT" | grep -i '^|total' | awk -F'|' '{print $NF}' | tr -d ' |')
-        # 如果为空，尝试从最后一行数字行获取
+        # 先尝试从 Total 行提取最后一个有效数值
+        DPDK_SPEED=$(echo "$DPDK_FULL_OUTPUT" | grep -i 'total' | awk -F'|' '{for(i=NF;i>0;i--)if($i~/^[0-9]+$/){print $i;exit}}' | tr -d ' ')
+        # 如果为空，尝试从最后一行数字行提取
         if [ -z "$DPDK_SPEED" ] || [ "$DPDK_SPEED" = "0" ]; then
-            DPDK_SPEED=$(echo "$DPDK_FULL_OUTPUT" | grep -E '^\|[0-9]+\|' | tail -1 | awk -F'|' '{print $NF}' | tr -d ' |')
+            DPDK_SPEED=$(echo "$DPDK_FULL_OUTPUT" | grep -E '^\|[0-9]+\|' | tail -1 | awk -F'|' '{for(i=NF;i>0;i--)if($i~/^[0-9]+$/){print $i;exit}}' | tr -d ' ')
+        fi
+        # 再尝试直接匹配所有数字，取最大的那个（应该是速度值）
+        if [ -z "$DPDK_SPEED" ] || [ "$DPDK_SPEED" = "0" ]; then
+            DPDK_SPEED=$(echo "$DPDK_FULL_OUTPUT" | grep -oE '[0-9]+' | sort -nr | head -1)
         fi
     fi
 fi
